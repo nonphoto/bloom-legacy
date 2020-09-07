@@ -1,4 +1,4 @@
-import { h, render } from "./lib/dom.js";
+import { element, render } from "./lib/dom.js";
 import S from "https://cdn.skypack.dev/s-js";
 import SArray from "https://cdn.skypack.dev/s-array";
 
@@ -16,36 +16,36 @@ const loop = (_t) => {
 
 const seconds = S(() => Math.floor(t() * 0.001));
 
-const app = () =>
-  h(
+const app = () => [
+  element(
     "div",
-    h(
-      "div",
-      S(() => (seconds() % 3 === 0 ? false : "a"))
+    seconds,
+    S(() => (seconds() % 3 === 0 ? "" : "a"))
+  ),
+  element("div", "b", "c", 3),
+  element("div", { style: { "--value": seconds } }, todos),
+  element("form", { action: "#" }, [
+    element("input", {
+      type: "text",
+      value,
+      onInput: (event) => {
+        value(event.target.value);
+      },
+    }),
+    element(
+      "button",
+      {
+        type: "submit",
+        onClick: () => {
+          todos.push(value());
+          value("");
+        },
+      },
+      "add"
     ),
-    h("div", "b", "c", 3),
-    h("div", { style: { "--value": seconds } }, todos),
-    h("div", [
-      h("input", {
-        type: "text",
-        value,
-        onInput: (event) => {
-          value(event.target.value);
-        },
-      }),
-      h(
-        "button",
-        {
-          onClick: () => {
-            todos.push(value());
-            value("");
-          },
-        },
-        "add"
-      ),
-    ])
-  );
+  ]),
+];
 
 render(app, document.querySelector("#app"));
 
-loop();
+loop(0);
