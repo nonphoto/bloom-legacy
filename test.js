@@ -8,7 +8,7 @@ S(() => {
   console.log(todos());
 });
 
-const t = S.data(0);
+const t = S.value(0);
 const loop = (_t) => {
   t(_t);
   requestAnimationFrame(loop);
