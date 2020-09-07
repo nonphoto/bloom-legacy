@@ -20,9 +20,9 @@ const app = () => [
   element(
     "div",
     seconds,
-    S(() => (seconds() % 3 === 0 ? "" : "a"))
+    S(() => (seconds() % 3 === 0 ? null : "a"))
   ),
-  element("div", "b", "c", 3),
+  element("div", "b", ["c"], 3),
   element("div", { style: { "--value": seconds } }, todos),
   element("form", { action: "#" }, [
     element("input", {
