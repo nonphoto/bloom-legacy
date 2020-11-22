@@ -1,4 +1,4 @@
-import { element, render } from "./lib/dom.js";
+import { element, render } from "./dom.js";
 import S from "https://cdn.skypack.dev/s-js";
 import SArray from "https://cdn.skypack.dev/s-array";
 
