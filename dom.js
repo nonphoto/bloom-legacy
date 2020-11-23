@@ -120,7 +120,9 @@ export function assign(node, props) {
   let key, value;
   for (key in props) {
     value = props[key];
-    if (key === "style") {
+    if (key === "children") {
+      patch(node, value, node.childNodes);
+    } else if (key === "style") {
       if (typeof value === "object") {
         let styleKey;
         for (styleKey in value) {
@@ -264,7 +266,7 @@ export function patch(parent, value, current) {
   } else if (valueType === "function") {
     return S((acc) => patch(parent, value(), acc), current);
   } else if (Array.isArray(value)) {
-    const array = normalize(value);
+    const array = normalizeArray(value);
     if (array.length === 0) {
       return clear(parent, current, "[]");
     } else {
@@ -288,17 +290,32 @@ export function patch(parent, value, current) {
       parent.appendChild(value);
     }
     return value;
+  } else if (valueType === "object") {
+    value.tag ||= "div";
+    if (
+      current instanceof Element &&
+      value.tag.toLowerCase() === current.tagName.toLowerCase()
+    ) {
+      const { tag, children, ...props } = value;
+      assign(current, props);
+      return patch(current, children, current.childNodes);
+    } else {
+      value = createElement(value);
+      return patch(parent, value, current);
+    }
   } else {
     return current;
   }
 }
 
-export function bind(node, value) {
-  const childNodes = Array.from(node.childNodes);
-  return patch(node, value, childNodes.length > 0 ? childNodes : undefined);
+export function createElement(data) {
+  const { tag = "div", ...other } = data;
+  const element = document.createElement(tag);
+  assign(element, other);
+  return element;
 }
 
-function normalize(array, normalized = []) {
+function normalizeArray(array, normalized = []) {
   for (let i = 0, item, itemType; i < array.length; i++) {
     item = array[i];
     itemType = typeof item;
@@ -306,12 +323,15 @@ function normalize(array, normalized = []) {
       normalized.push(item);
     } else if (item == null || itemType === "boolean") {
     } else if (Array.isArray(item)) {
-      normalize(array, normalized);
+      normalizeArray(array, normalized);
     } else if (itemType === "function") {
       item = item();
-      normalize(Array.isArray(item) ? item : [item], normalized);
+      normalizeArray(Array.isArray(item) ? item : [item], normalized);
     } else if (itemType === "string") {
       normalized.push(document.createTextNode(item));
+    } else if (itemType === "object") {
+      console.log(item);
+      normalized.push(createElement(item));
     } else {
       normalized.push(document.createTextNode(item.toString()));
     }
