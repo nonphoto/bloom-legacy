@@ -300,7 +300,7 @@ export function patch(parent, value, current) {
       assign(current, props);
       return patch(current, children, current.childNodes);
     } else {
-      value = createElement(value);
+      value = create(value);
       return patch(parent, value, current);
     }
   } else {
@@ -308,11 +308,17 @@ export function patch(parent, value, current) {
   }
 }
 
-export function createElement(data) {
-  const { tag = "div", ...other } = data;
-  const element = document.createElement(tag);
-  assign(element, other);
-  return element;
+export function create(data) {
+  if (typeof data === "object") {
+    const { tag = "div", ...other } = data;
+    const element = document.createElement(tag);
+    assign(element, other);
+    return element;
+  } else if (typeof data === "string") {
+    return document.createTextNode(data);
+  } else if (typeof data === "number") {
+    return document.createTextNode(data.toString());
+  }
 }
 
 function normalizeArray(array, normalized = []) {
@@ -331,7 +337,7 @@ function normalizeArray(array, normalized = []) {
       normalized.push(document.createTextNode(item));
     } else if (itemType === "object") {
       console.log(item);
-      normalized.push(createElement(item));
+      normalized.push(create(item));
     } else {
       normalized.push(document.createTextNode(item.toString()));
     }

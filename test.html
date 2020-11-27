@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <script type="module">
+      import * as dom from "./dom.js";
+      import S from "https://cdn.skypack.dev/s-js";
+      import SArray from "https://cdn.skypack.dev/s-array";
+
+      (() => {
+        const a = dom.create("hello");
+        const b = document.createTextNode("hello");
+        console.assert(a.isEqualNode(b), "'create' does not create text nodes");
+      })();
+
+      (() => {
+        const a = dom.create({});
+        const b = document.createElement("div");
+        console.assert(a.isEqualNode(b), "'create' does not create elements");
+      })();
+
+      (() => {
+        const a = dom.create({
+          tag: "span",
+          testAttribute: "hello",
+          hidden: true,
+          style: { opacity: 0.5 },
+          classList: ["class-1", "class-2"],
+        });
+        console.assert(
+          a.tagName === "SPAN",
+          "'create' does not create elements with the correct tag name"
+        );
+        console.assert(
+          a.getAttribute("testAttribute") === "hello",
+          "'create' does not set attributes"
+        );
+        console.assert(a.hidden === true, "'create' does not set properties");
+        console.assert(
+          a.style.opacity === "0.5",
+          "'create' does not set style properties"
+        );
+        console.assert(
+          a.getAttribute("class") === "class-1 class-2",
+          "'create' does not set class list"
+        );
+      })();
+
+      (() => {
+        const a = dom.create({});
+        const b = dom.create({ children: a });
+        console.assert(
+          b.firstChild.isSameNode(a),
+          "'create' does not insert children"
+        );
+      })();
+
+      (() => {
+        const a = dom.create({ children: {} });
+        const b = document.createElement("div");
+        console.assert(
+          a.firstChild.isEqualNode(b),
+          "'create' does not create children"
+        );
+      })();
+
+      (() => {
+        const a = dom.create("a");
+        const b = dom.create("b");
+        const c = dom.create("c");
+        const d = dom.create({ children: [a, b, c] });
+        console.assert(
+          d.childNodes[0].isSameNode(a) &&
+            d.childNodes[1].isSameNode(b) &&
+            d.childNodes[2].isSameNode(c),
+          "'create' does not create child arrays"
+        );
+      })();
+
+      (() => {
+        const a = dom.create(10);
+        const b = document.createTextNode("10");
+        console.assert(a.isEqualNode(b), "'create' does not stringify numbers");
+      })();
+
+      (() => {
+        const props = {
+          tag: "span",
+          testAttribute: "hello",
+          hidden: true,
+          style: { opacity: 0.5 },
+          classList: ["class-1", "class-2"],
+          children: dom.create({}),
+        };
+        const a = dom.create(props);
+        const b = dom.assign(dom.create({}, props));
+        console.assert(
+          a.isEqualNode(b),
+          "'assign' does not assign props to elements"
+        );
+      })();
+
+      (() => {
+        const a = dom.create({});
+        const b = dom.create({});
+        patch(a, b);
+        console.assert(
+          a.firstChild.isSameNode(b),
+          "'patch' does not patch instances of type Node on undefined"
+        );
+      })();
+    </script>
+  </body>
+</html>
