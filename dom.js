@@ -101,7 +101,7 @@ export function setProperty(node, key, value) {
 export function setClassList(node, value) {
   if (typeof value === "function") {
     S(() => setClassList(node, value()));
-  } else if (Array.isArray(value)) {
+  } else if (isArrayLike(value)) {
     node.className = value.join(" ");
   } else {
     node.className = value;
@@ -120,6 +120,9 @@ export function assign(node, props) {
   let key, value;
   for (key in props) {
     value = props[key];
+    if (key === "tag") {
+      continue;
+    }
     if (key === "children") {
       patch(node, value, node.childNodes);
     } else if (key === "style") {
@@ -157,6 +160,7 @@ export function assign(node, props) {
       setAttribute(node, key, value);
     }
   }
+  return node;
 }
 
 // Slightly modified version of: https://github.com/WebReflection/udomdiff/blob/master/index.js
@@ -242,47 +246,56 @@ export function patch(parent, value, current) {
   while (typeof current === "function") {
     current = current();
   }
+  if (!isArrayLike(current) && !(current instanceof Node)) {
+    return patch(parent, value, parent.childNodes);
+  }
   if (value === current) {
     return current;
   }
   const valueType = typeof value;
   if (valueType === "string" || valueType === "number") {
-    if (valueType === "number") {
-      value = value.toString();
-    }
-    if (current instanceof Comment) {
-      parent.removeChild(current);
-    } else if (current instanceof Node) {
+    value = value.toString();
+    if (current instanceof TextNode) {
       current.nodeValue = value;
       return current;
-    } else if (Array.isArray(current)) {
-      clear(parent, current);
+    } else {
+      clear(parent);
+      value = document.createTextNode(value);
+      parent.appendChild(value);
+      return value;
     }
-    value = document.createTextNode(value);
-    parent.appendChild(value);
-    return value;
   } else if (value == null || valueType === "boolean") {
-    return clear(parent, current, value);
+    if (current instanceof Comment) {
+      current.nodeValue = value;
+      return current;
+    } else {
+      clear(parent);
+      value = document.createComment(value);
+      parent.appendChild(value);
+      return value;
+    }
   } else if (valueType === "function") {
     return S((acc) => patch(parent, value(), acc), current);
-  } else if (Array.isArray(value)) {
+  } else if (isArrayLike(value)) {
     const array = normalizeArray(value);
-    if (array.length === 0) {
-      return clear(parent, current, "[]");
+    if (array.length <= 0) {
+      clear(parent);
+      value = document.createComment("[]");
+      parent.appendChild(value);
+      return value;
+    } else if (isArrayLike(current) && current.length > 0) {
+      reconcile(parent, current, array);
+    } else if (current instanceof Node) {
+      reconcile(parent, [current], array);
     } else {
-      if (Array.isArray(current)) {
-        reconcile(parent, current, array);
-      } else if (current instanceof Node) {
-        reconcile(parent, [current], array);
-      } else {
-        for (let i = 0; i < array.length; i++) {
-          parent.appendChild(array[i]);
-        }
+      clear(parent);
+      for (let i = 0; i < array.length; i++) {
+        parent.appendChild(array[i]);
       }
-      return array;
     }
+    return parent.childNodes;
   } else if (value instanceof Node) {
-    if (Array.isArray(current)) {
+    if (isArrayLike(current) && current.length > 0) {
       reconcile(parent, current, [value]);
     } else if (current instanceof Node) {
       parent.replaceChild(value, current);
@@ -291,14 +304,13 @@ export function patch(parent, value, current) {
     }
     return value;
   } else if (valueType === "object") {
-    value.tag ||= "div";
+    const tag = value.tag || "div";
     if (
       current instanceof Element &&
-      value.tag.toLowerCase() === current.tagName.toLowerCase()
+      tag.toLowerCase() === current.tagName.toLowerCase()
     ) {
-      const { tag, children, ...props } = value;
-      assign(current, props);
-      return patch(current, children, current.childNodes);
+      assign(current, value);
+      return current;
     } else {
       value = create(value);
       return patch(parent, value, current);
@@ -310,9 +322,9 @@ export function patch(parent, value, current) {
 
 export function create(data) {
   if (typeof data === "object") {
-    const { tag = "div", ...other } = data;
+    const { tag = "div", ...props } = data;
     const element = document.createElement(tag);
-    assign(element, other);
+    assign(element, props);
     return element;
   } else if (typeof data === "string") {
     return document.createTextNode(data);
@@ -328,11 +340,11 @@ function normalizeArray(array, normalized = []) {
     if (item instanceof Node) {
       normalized.push(item);
     } else if (item == null || itemType === "boolean") {
-    } else if (Array.isArray(item)) {
+    } else if (isArrayLike(item)) {
       normalizeArray(array, normalized);
     } else if (itemType === "function") {
       item = item();
-      normalizeArray(Array.isArray(item) ? item : [item], normalized);
+      normalizeArray(isArrayLike(item) ? item : [item], normalized);
     } else if (itemType === "string") {
       normalized.push(document.createTextNode(item));
     } else if (itemType === "object") {
@@ -345,22 +357,13 @@ function normalizeArray(array, normalized = []) {
   return normalized;
 }
 
-function clear(parent, current, marker) {
-  if (current instanceof Comment) {
-    current.nodeValue = "" + marker;
-    return current;
-  } else if (current instanceof Node) {
-    marker = document.createComment(marker);
-    parent.replaceChild(marker, current);
-  } else if (Array.isArray(current)) {
-    for (let i = 0; i < current.length; i++) {
-      parent.removeChild(current[i]);
-    }
-    marker = document.createComment(marker);
-    parent.appendChild(marker);
-  } else {
-    marker = document.createComment(marker);
-    parent.appendChild(marker);
+function isArrayLike(object) {
+  return typeof object === "object" && typeof object.length === "number";
+}
+
+export function clear(parent) {
+  while (parent.firstChild) {
+    parent.removeChild(parent.firstChild);
   }
-  return marker;
+  return parent;
 }

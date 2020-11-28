@@ -92,10 +92,9 @@
           hidden: true,
           style: { opacity: 0.5 },
           classList: ["class-1", "class-2"],
-          children: dom.create({}),
         };
         const a = dom.create(props);
-        const b = dom.assign(dom.create({}, props));
+        const b = dom.assign(dom.create({ tag: "span" }), props);
         console.assert(
           a.isEqualNode(b),
           "'assign' does not assign props to elements"
@@ -105,7 +104,7 @@
       (() => {
         const a = dom.create({});
         const b = dom.create({});
-        patch(a, b);
+        dom.patch(a, b);
         console.assert(
           a.firstChild.isSameNode(b),
           "'patch' does not patch instances of type Node on undefined"
