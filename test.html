@@ -9,159 +9,167 @@
       import S from "https://cdn.skypack.dev/s-js";
       import SArray from "https://cdn.skypack.dev/s-array";
 
-      (() => {
-        const a = dom.create("hello");
-        const b = document.createTextNode("hello");
-        console.assert(a.isEqualNode(b), "'create' does not create text nodes");
-      })();
+      S.root(() => {
+        (() => {
+          const a = dom.create("hello");
+          const b = document.createTextNode("hello");
+          console.assert(
+            a.isEqualNode(b),
+            "'create' does not create text nodes"
+          );
+        })();
 
-      (() => {
-        const a = dom.create({});
-        const b = document.createElement("div");
-        console.assert(a.isEqualNode(b), "'create' does not create elements");
-      })();
+        (() => {
+          const a = dom.create({});
+          const b = document.createElement("div");
+          console.assert(a.isEqualNode(b), "'create' does not create elements");
+        })();
 
-      (() => {
-        const a = dom.create({
-          tag: "span",
-          testAttribute: "hello",
-          hidden: true,
-          style: { opacity: 0.5 },
-          classList: ["class-1", "class-2"],
-        });
-        console.assert(
-          a.tagName === "SPAN",
-          "'create' does not create elements with the correct tag name"
-        );
-        console.assert(
-          a.getAttribute("testAttribute") === "hello",
-          "'create' does not set attributes"
-        );
-        console.assert(a.hidden === true, "'create' does not set properties");
-        console.assert(
-          a.style.opacity === "0.5",
-          "'create' does not set style properties"
-        );
-        console.assert(
-          a.getAttribute("class") === "class-1 class-2",
-          "'create' does not set class list"
-        );
-      })();
+        (() => {
+          const a = dom.create({
+            tag: "span",
+            testAttribute: "hello",
+            hidden: true,
+            style: { opacity: 0.5 },
+            classList: ["class-1", "class-2"],
+          });
+          console.assert(
+            a.tagName === "SPAN",
+            "'create' does not create elements with the correct tag name"
+          );
+          console.assert(
+            a.getAttribute("testAttribute") === "hello",
+            "'create' does not set attributes"
+          );
+          console.assert(a.hidden === true, "'create' does not set properties");
+          console.assert(
+            a.style.opacity === "0.5",
+            "'create' does not set style properties"
+          );
+          console.assert(
+            a.getAttribute("class") === "class-1 class-2",
+            "'create' does not set class list"
+          );
+        })();
 
-      (() => {
-        const a = dom.create({});
-        const b = dom.create({ children: a });
-        console.assert(
-          b.firstChild.isSameNode(a),
-          "'create' does not insert children"
-        );
-      })();
+        (() => {
+          const a = dom.create({});
+          const b = dom.create({ children: a });
+          console.assert(
+            b.firstChild.isSameNode(a),
+            "'create' does not insert children"
+          );
+        })();
 
-      (() => {
-        const a = dom.create({ children: {} });
-        const b = document.createElement("div");
-        console.assert(
-          a.firstChild.isEqualNode(b),
-          "'create' does not create children"
-        );
-      })();
+        (() => {
+          const a = dom.create({ children: {} });
+          const b = document.createElement("div");
+          console.assert(
+            a.firstChild.isEqualNode(b),
+            "'create' does not create children"
+          );
+        })();
 
-      (() => {
-        const a = dom.create("a");
-        const b = dom.create("b");
-        const c = dom.create("c");
-        const d = dom.create({ children: [a, b, c] });
-        console.assert(
-          d.childNodes[0].isSameNode(a) &&
-            d.childNodes[1].isSameNode(b) &&
-            d.childNodes[2].isSameNode(c),
-          "'create' does not create child arrays"
-        );
-      })();
+        (() => {
+          const a = dom.create("a");
+          const b = dom.create("b");
+          const c = dom.create("c");
+          const d = dom.create({ children: [a, b, c] });
+          console.assert(
+            d.childNodes[0].isSameNode(a) &&
+              d.childNodes[1].isSameNode(b) &&
+              d.childNodes[2].isSameNode(c),
+            "'create' does not create child arrays"
+          );
+        })();
 
-      (() => {
-        const a = dom.create(10);
-        const b = document.createTextNode("10");
-        console.assert(a.isEqualNode(b), "'create' does not stringify numbers");
-      })();
+        (() => {
+          const a = dom.create(10);
+          const b = document.createTextNode("10");
+          console.assert(
+            a.isEqualNode(b),
+            "'create' does not stringify numbers"
+          );
+        })();
 
-      (() => {
-        const props = {
-          tag: "span",
-          testAttribute: "hello",
-          hidden: true,
-          style: { opacity: 0.5 },
-          classList: ["class-1", "class-2"],
-        };
-        const a = dom.create(props);
-        const b = dom.assign(dom.create({ tag: "span" }), props);
-        console.assert(
-          a.isEqualNode(b),
-          "'assign' does not assign props to elements"
-        );
-      })();
+        (() => {
+          const props = {
+            tag: "span",
+            testAttribute: "hello",
+            hidden: true,
+            style: { opacity: 0.5 },
+            classList: ["class-1", "class-2"],
+          };
+          const a = dom.create(props);
+          const b = dom.assign(dom.create({ tag: "span" }), props);
+          console.assert(
+            a.isEqualNode(b),
+            "'assign' does not assign props to elements"
+          );
+        })();
 
-      (() => {
-        const a = dom.create({});
-        const b = dom.create({});
-        dom.patch(a, b);
-        console.assert(
-          a.firstChild.isSameNode(b),
-          "'patch' does not patch instances of type Node on undefined"
-        );
-      })();
+        (() => {
+          const a = dom.create({});
+          const b = dom.create({});
+          dom.patch(a, b);
+          console.assert(
+            a.firstChild.isSameNode(b),
+            "'patch' does not patch instances of type Node on undefined"
+          );
+        })();
 
-      (() => {
-        const isHidden = S.data(false);
-        const a = dom.create({ hidden: isHidden });
-        console.assert(
-          a.getAttribute("hidden") === null,
-          "'create' does not accept signal attribute"
-        );
-        isHidden(true);
-        console.assert(
-          a.getAttribute("hidden") === "",
-          "'create' does not update signal attribute"
-        );
-      })();
+        (() => {
+          const isHidden = S.data(false);
+          const a = dom.create({ hidden: isHidden });
+          console.assert(
+            a.getAttribute("hidden") === null,
+            "'create' does not accept signal attribute"
+          );
+          isHidden(true);
+          console.assert(
+            a.getAttribute("hidden") === "",
+            "'create' does not update signal attribute"
+          );
+        })();
 
-      (() => {
-        const isToggled = S.data(false);
-        const a = dom.create({
-          children: S(() => (isToggled() ? "On" : "Off")),
-        });
-        console.assert(
-          a.innerHTML === "Off",
-          "'create' does not accept signal child"
-        );
-        isToggled(true);
-        console.assert(
-          a.innerHTML === "On",
-          "'create' does not update element when signal child updates"
-        );
-      })();
+        (() => {
+          const isToggled = S.data(false);
+          const a = dom.create({
+            children: S(() => (isToggled() ? "On" : "Off")),
+          });
+          console.assert(
+            a.innerHTML === "Off",
+            "'create' does not accept signal child"
+          );
+          isToggled(true);
+          console.assert(
+            a.innerHTML === "On",
+            "'create' does not update element when signal child updates"
+          );
+        })();
 
-      (() => {
-        const items = SArray([]);
-        const a = dom.create({
-          tag: "ul",
-          children: items.map((text) => ({
-            tag: "li",
-            children: text,
-          })),
-        });
-        console.assert(
-          a.outerHTML === "<ul><!--[]--></ul>",
-          "'create' does not accept signal array child"
-        );
-        items.push("Alpha");
-        items.push("Bravo");
-        items.push("Charlie");
-        console.assert(
-          a.innerHTML === "<li>Alpha</li><li>Bravo</li><li>Charlie</li>",
-          "'create' does not update element children when signal array child updates."
-        );
-      })();
+        (() => {
+          const items = SArray([]);
+          const a = dom.create({
+            tag: "ul",
+            children: items.map((text) => ({
+              tag: "li",
+              children: text,
+            })),
+          });
+          console.assert(
+            a.outerHTML === "<ul><!--[]--></ul>",
+            "'create' does not accept signal array child"
+          );
+          items.push("Alpha");
+          items.push("Bravo");
+          items.push("Charlie");
+          console.assert(
+            a.innerHTML === "<li>Alpha</li><li>Bravo</li><li>Charlie</li>",
+            "'create' does not update element children when signal array child updates."
+          );
+        })();
+      });
     </script>
   </body>
 </html>
