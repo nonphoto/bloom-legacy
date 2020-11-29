@@ -8,21 +8,21 @@ Bloom is a small toolkit for manipulating the DOM. It provides a declarative API
 
 Creates a new `Node`.
 
-#### Create a `TextNode`
+#### Create a text node
 
 ```js
 create("Hello");
 // #text "Hello"
 ```
 
-#### Create an `Element`
+#### Create an element
 
 ```js
 create({});
 // <div></div>
 ```
 
-#### Create an `Element` with attributes
+#### Create an element with attributes
 
 ```js
 create({

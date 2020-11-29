@@ -163,82 +163,25 @@ export function assign(node, props) {
   return node;
 }
 
-// Slightly modified version of: https://github.com/WebReflection/udomdiff/blob/master/index.js
-export default function reconcile(parentNode, a, b) {
-  let bLength = b.length,
-    aEnd = a.length,
-    bEnd = bLength,
-    aStart = 0,
-    bStart = 0,
-    after = a[aEnd - 1].nextSibling,
-    map = null;
-
-  while (aStart < aEnd || bStart < bEnd) {
-    // append
-    if (aEnd === aStart) {
-      const node =
-        bEnd < bLength
-          ? bStart
-            ? b[bStart - 1].nextSibling
-            : b[bEnd - bStart]
-          : after;
-
-      while (bStart < bEnd) parentNode.insertBefore(b[bStart++], node);
-      // remove
-    } else if (bEnd === bStart) {
-      while (aStart < aEnd) {
-        if (!map || !map.has(a[aStart])) parentNode.removeChild(a[aStart]);
-        aStart++;
-      }
-      // common prefix
-    } else if (a[aStart] === b[bStart]) {
-      aStart++;
-      bStart++;
-      // common suffix
-    } else if (a[aEnd - 1] === b[bEnd - 1]) {
-      aEnd--;
-      bEnd--;
-      // swap forward
-    } else if (aEnd - aStart === 1 && bEnd - bStart === 1) {
-      if ((map && map.has(a[aStart])) || a[aStart].parentNode !== parentNode) {
-        parentNode.insertBefore(b[bStart], bEnd < bLength ? b[bEnd] : after);
-      } else parentNode.replaceChild(b[bStart], a[aStart]);
-      break;
-      // swap backward
-    } else if (a[aStart] === b[bEnd - 1] && b[bStart] === a[aEnd - 1]) {
-      const node = a[--aEnd].nextSibling;
-      parentNode.insertBefore(b[bStart++], a[aStart++].nextSibling);
-      parentNode.insertBefore(b[--bEnd], node);
-
-      a[aEnd] = b[bEnd];
-      // fallback to map
+export function reconcile(parent, array, current) {
+  for (
+    let i = current.length, tail = current[current.length - 1], temp;
+    i > array.length;
+    i--
+  ) {
+    temp = tail.previousSibling;
+    parent.removeChild(tail);
+    tail = temp;
+  }
+  for (let i = 0, item, head = current[0]; i < array.length; i++) {
+    item = array[i];
+    if (head) {
+      patch(parent, item, head);
     } else {
-      if (!map) {
-        map = new Map();
-        let i = bStart;
-
-        while (i < bEnd) map.set(b[i], i++);
-      }
-
-      if (map.has(a[aStart])) {
-        const index = map.get(a[aStart]);
-
-        if (bStart < index && index < bEnd) {
-          let i = aStart,
-            sequence = 1;
-
-          while (++i < aEnd && i < bEnd) {
-            if (!map.has(a[i]) || map.get(a[i]) !== index + sequence) break;
-            sequence++;
-          }
-
-          if (sequence > index - bStart) {
-            const node = a[aStart];
-            while (bStart < index) parentNode.insertBefore(b[bStart++], node);
-          } else parentNode.replaceChild(b[bStart++], a[aStart++]);
-        } else aStart++;
-      } else parentNode.removeChild(a[aStart++]);
+      head = create(item);
+      parent.appendChild(head);
     }
+    head = head.nextSibling;
   }
 }
 
@@ -255,7 +198,7 @@ export function patch(parent, value, current) {
   const valueType = typeof value;
   if (valueType === "string" || valueType === "number") {
     value = value.toString();
-    if (current instanceof TextNode) {
+    if (current instanceof Text) {
       current.nodeValue = value;
       return current;
     } else {
@@ -284,9 +227,9 @@ export function patch(parent, value, current) {
       parent.appendChild(value);
       return value;
     } else if (isArrayLike(current) && current.length > 0) {
-      reconcile(parent, current, array);
+      reconcile(parent, array, current);
     } else if (current instanceof Node) {
-      reconcile(parent, [current], array);
+      reconcile(parent, array, [current]);
     } else {
       clear(parent);
       for (let i = 0; i < array.length; i++) {
@@ -296,7 +239,7 @@ export function patch(parent, value, current) {
     return parent.childNodes;
   } else if (value instanceof Node) {
     if (isArrayLike(current) && current.length > 0) {
-      reconcile(parent, current, [value]);
+      reconcile(parent, [value], current);
     } else if (current instanceof Node) {
       parent.replaceChild(value, current);
     } else {
@@ -321,7 +264,9 @@ export function patch(parent, value, current) {
 }
 
 export function create(data) {
-  if (typeof data === "object") {
+  if (data instanceof Node) {
+    return data;
+  } else if (typeof data === "object") {
     const { tag = "div", ...props } = data;
     const element = document.createElement(tag);
     assign(element, props);
@@ -330,6 +275,8 @@ export function create(data) {
     return document.createTextNode(data);
   } else if (typeof data === "number") {
     return document.createTextNode(data.toString());
+  } else {
+    return document.createComment(data);
   }
 }
 
@@ -337,28 +284,22 @@ function normalizeArray(array, normalized = []) {
   for (let i = 0, item, itemType; i < array.length; i++) {
     item = array[i];
     itemType = typeof item;
-    if (item instanceof Node) {
-      normalized.push(item);
-    } else if (item == null || itemType === "boolean") {
-    } else if (isArrayLike(item)) {
+    if (isArrayLike(item)) {
       normalizeArray(array, normalized);
     } else if (itemType === "function") {
       item = item();
       normalizeArray(isArrayLike(item) ? item : [item], normalized);
-    } else if (itemType === "string") {
-      normalized.push(document.createTextNode(item));
-    } else if (itemType === "object") {
-      console.log(item);
-      normalized.push(create(item));
-    } else {
-      normalized.push(document.createTextNode(item.toString()));
+    } else if (itemType === "string" || itemType === "object") {
+      normalized.push(item);
+    } else if (itemType === "number") {
+      normalized.push(item.toString());
     }
   }
   return normalized;
 }
 
 function isArrayLike(object) {
-  return typeof object === "object" && typeof object.length === "number";
+  return Array.isArray(object) || object instanceof NodeList;
 }
 
 export function clear(parent) {

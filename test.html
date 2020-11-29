@@ -110,6 +110,58 @@
           "'patch' does not patch instances of type Node on undefined"
         );
       })();
+
+      (() => {
+        const isHidden = S.data(false);
+        const a = dom.create({ hidden: isHidden });
+        console.assert(
+          a.getAttribute("hidden") === null,
+          "'create' does not accept signal attribute"
+        );
+        isHidden(true);
+        console.assert(
+          a.getAttribute("hidden") === "",
+          "'create' does not update signal attribute"
+        );
+      })();
+
+      (() => {
+        const isToggled = S.data(false);
+        const a = dom.create({
+          children: S(() => (isToggled() ? "On" : "Off")),
+        });
+        console.assert(
+          a.innerHTML === "Off",
+          "'create' does not accept signal child"
+        );
+        isToggled(true);
+        console.assert(
+          a.innerHTML === "On",
+          "'create' does not update element when signal child updates"
+        );
+      })();
+
+      (() => {
+        const items = SArray([]);
+        const a = dom.create({
+          tag: "ul",
+          children: items.map((text) => ({
+            tag: "li",
+            children: text,
+          })),
+        });
+        console.assert(
+          a.outerHTML === "<ul><!--[]--></ul>",
+          "'create' does not accept signal array child"
+        );
+        items.push("Alpha");
+        items.push("Bravo");
+        items.push("Charlie");
+        console.assert(
+          a.innerHTML === "<li>Alpha</li><li>Bravo</li><li>Charlie</li>",
+          "'create' does not update element children when signal array child updates."
+        );
+      })();
     </script>
   </body>
 </html>
