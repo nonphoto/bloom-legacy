@@ -78,10 +78,10 @@ Reactive child:
 const isToggled = S.data(false);
 const element = create({ children: S(() => (isToggled() ? "On" : "Off")) });
 console.log(element);
-// element === <div>Off</div>
+// <div>Off</div>
 isToggled(true);
 console.log(element);
-// element === <div>On</div>
+// <div>On</div>
 ```
 
 Children are updated intelligently. That is, child nodes will be updated instead of replaced when possible, using `patch` internally (see below). Reactive child arrays can be declared using [SArray](https://github.com/adamhaile/S-array):
@@ -177,19 +177,28 @@ console.log(b.isSameNode(c));
 // true
 ```
 
+Patching `undefined`, a `boolean`, an empty array, or `null` will result in a placeholder `Comment` node.
+
+```js
+const element = create({ children: "Hello" });
+patch(element, []);
+console.log(element);
+//<div><!-- [] --></div>
+```
+
 `patch` accepts a third argument, `current`. If present, it will only patch over those nodes.
 
 ```js
-const a = create({ children: ["Alpha", "Charlie"] });
-console.log(a);
+const element = create({ children: ["Alpha", "Charlie"] });
+console.log(element);
 /*
   <div>
     #text Alpha
     #text Charlie
   </div>
 */
-patch(a, ["Bravo", "Charlie"], a.lastChild());
-console.log(a);
+patch(element, ["Bravo", "Charlie"], element.lastChild());
+console.log(element);
 /*
   <div>
     #text Alpha
@@ -199,7 +208,7 @@ console.log(a);
 */
 ```
 
-Use S and SArray to patch reactively. When updating it will remember the nodes it created and patch the new values against the old ones.
+Use S and SArray to patch reactively. When updating it will remember the nodes it created last and pass them as the `current` argument.
 
 ```js
 const items = SArray([]);
@@ -220,6 +229,7 @@ console.log(element);
 /*
   <div>
     <span>First node</span>
+    <!-- [] -->
     <span>Last node</span>
   </div>
 */
@@ -316,7 +326,7 @@ const tagNames = [
 const elements = Object.fromEntries(
   tagNames.map((tag) => [
     tag,
-    (props, ...children) => create({ tag, props, children }),
+    (props, ...children) => create({ tag, ...props, children }),
   ])
 );
 const view = ul({}, li({}, "Alpha"), li({}, "Bravo"), li({}, "Charlie"));

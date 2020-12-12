@@ -164,33 +164,52 @@ export function assign(node, props) {
 }
 
 export function reconcile(parent, array, current) {
-  for (
-    let i = current.length, tail = current[current.length - 1], temp;
-    i > array.length;
-    i--
-  ) {
-    temp = tail.previousSibling;
-    parent.removeChild(tail);
-    tail = temp;
+  console.log(array, current);
+  for (let i = current.length; i > array.length; i--) {
+    parent.removeChild(current[i - 1]);
   }
-  for (let i = 0, item, head = current[0]; i < array.length; i++) {
-    item = array[i];
-    if (head) {
-      patch(parent, item, head);
+  let result = [];
+  let head = current[0];
+  for (let i = 0; i < array.length; i++) {
+    if (i < current.length) {
+      head = patch(parent, array[i], current[i]);
     } else {
-      head = create(item);
-      parent.appendChild(head);
+      head = insertAfter(parent, array[i], head);
     }
-    head = head.nextSibling;
+    result.push(head);
   }
+  return result;
+}
+
+export function insertAfter(parent, value, marker) {
+  const comment = document.createComment("");
+  if (marker instanceof Node && !marker.isSameNode(parent.lastChild)) {
+    parent.insertBefore(comment, marker.nextSibling);
+  } else {
+    parent.appendChild(comment);
+  }
+  return patch(parent, value, comment);
+}
+
+export function insertBefore(parent, value, marker) {
+  const comment = document.createComment("");
+  if (marker instanceof Node) {
+    parent.insertBefore(comment, marker);
+  } else {
+    parent.insertBefore(comment, parent.firstChild);
+  }
+  return patch(parent, value, comment);
 }
 
 export function patch(parent, value, current) {
   while (typeof current === "function") {
     current = current();
   }
-  if (!isArrayLike(current) && !(current instanceof Node)) {
-    return patch(parent, value, parent.childNodes);
+  if (!(isArrayLike(current) || current instanceof Node)) {
+    current = parent.childNodes;
+  }
+  if (current instanceof NodeList) {
+    current = Array.from(current);
   }
   if (value === current) {
     return current;
@@ -202,43 +221,28 @@ export function patch(parent, value, current) {
       current.nodeValue = value;
       return current;
     } else {
-      clear(parent);
-      value = document.createTextNode(value);
-      parent.appendChild(value);
-      return value;
+      return patch(parent, document.createTextNode(value), current);
     }
   } else if (value == null || valueType === "boolean") {
     if (current instanceof Comment) {
       current.nodeValue = value;
       return current;
     } else {
-      clear(parent);
-      value = document.createComment(value);
-      parent.appendChild(value);
-      return value;
+      return patch(parent, document.createComment(value), current);
     }
   } else if (valueType === "function") {
     return S((acc) => patch(parent, value(), acc), current);
   } else if (isArrayLike(value)) {
-    const array = normalizeArray(value);
-    if (array.length <= 0) {
-      clear(parent);
-      value = document.createComment("[]");
-      parent.appendChild(value);
-      return value;
-    } else if (isArrayLike(current) && current.length > 0) {
-      reconcile(parent, array, current);
+    const array = value.flat(Infinity);
+    if (isArrayLike(current)) {
+      return reconcile(parent, array, current);
     } else if (current instanceof Node) {
-      reconcile(parent, array, [current]);
+      return reconcile(parent, array, [current]);
     } else {
-      clear(parent);
-      for (let i = 0; i < array.length; i++) {
-        parent.appendChild(array[i]);
-      }
+      throw new Error("Not possible");
     }
-    return parent.childNodes;
   } else if (value instanceof Node) {
-    if (isArrayLike(current) && current.length > 0) {
+    if (isArrayLike(current)) {
       reconcile(parent, [value], current);
     } else if (current instanceof Node) {
       parent.replaceChild(value, current);
@@ -255,8 +259,7 @@ export function patch(parent, value, current) {
       assign(current, value);
       return current;
     } else {
-      value = create(value);
-      return patch(parent, value, current);
+      return patch(parent, create(value), current);
     }
   } else {
     return current;
@@ -266,6 +269,8 @@ export function patch(parent, value, current) {
 export function create(data) {
   if (data instanceof Node) {
     return data;
+  } else if (isArrayLike(data)) {
+    return document.createComment("[]");
   } else if (typeof data === "object") {
     const { tag = "div", ...props } = data;
     const element = document.createElement(tag);
@@ -275,36 +280,13 @@ export function create(data) {
     return document.createTextNode(data);
   } else if (typeof data === "number") {
     return document.createTextNode(data.toString());
+  } else if (typeof data === "function") {
+    return S(() => create(data()));
   } else {
     return document.createComment(data);
   }
 }
 
-function normalizeArray(array, normalized = []) {
-  for (let i = 0, item, itemType; i < array.length; i++) {
-    item = array[i];
-    itemType = typeof item;
-    if (isArrayLike(item)) {
-      normalizeArray(array, normalized);
-    } else if (itemType === "function") {
-      item = item();
-      normalizeArray(isArrayLike(item) ? item : [item], normalized);
-    } else if (itemType === "string" || itemType === "object") {
-      normalized.push(item);
-    } else if (itemType === "number") {
-      normalized.push(item.toString());
-    }
-  }
-  return normalized;
-}
-
 function isArrayLike(object) {
   return Array.isArray(object) || object instanceof NodeList;
-}
-
-export function clear(parent) {
-  while (parent.firstChild) {
-    parent.removeChild(parent.firstChild);
-  }
-  return parent;
 }

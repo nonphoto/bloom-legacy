@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <script type="module">
+      import * as dom from "./dom.js";
+      import S from "https://cdn.skypack.dev/s-js";
+      import SArray from "https://cdn.skypack.dev/s-array";
+
+      const todos = SArray([]);
+      const inputText = S.data("");
+      const addTodo = () => {
+        todos.push({ title: S.data(inputText()), done: S.data(false) });
+        inputText("");
+      };
+
+      dom.patch(document.body, {
+        children: [
+          { tag: "h1", children: "Todo List" },
+          {
+            tag: "input",
+            type: "text",
+            onInput: (event) => void inputText(event.target.value),
+            value: inputText,
+          },
+          { tag: "button", onClick: addTodo, children: "Add" },
+          todos.map((todo) => ({
+            children: [
+              {
+                tag: "input",
+                type: "checkbox",
+                onInput: todo.done,
+                value: todo.done,
+              },
+              {
+                tag: "input",
+                type: "text",
+                onInput: (event) => void todo.title(event.target.value),
+                value: todo.title,
+              },
+              {
+                tag: "button",
+                onClick: () => todos.remove(todo),
+                children: "Remove",
+              },
+            ],
+          })),
+        ],
+      });
+    </script>
+  </body>
+</html>
