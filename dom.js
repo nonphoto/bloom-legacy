@@ -164,12 +164,14 @@ export function assign(node, props) {
 }
 
 export function reconcile(parent, array, current) {
-  console.log(array, current);
+  if (array.length <= 0) {
+    array = [document.createComment("[]")];
+  }
   for (let i = current.length; i > array.length; i--) {
     parent.removeChild(current[i - 1]);
   }
-  let result = [];
   let head = current[0];
+  let result = [];
   for (let i = 0; i < array.length; i++) {
     if (i < current.length) {
       head = patch(parent, array[i], current[i]);
