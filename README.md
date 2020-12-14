@@ -261,10 +261,16 @@ const addTodo = () => {
   todos.push({ title: S.data(inputText()), done: S.data(false) });
   inputText("");
 };
-const view = {
+
+dom.patch(document.body, {
   children: [
     { tag: "h1", children: "Todo List" },
-    { tag: "input", type: "text", onInput: inputText, value: inputText },
+    {
+      tag: "input",
+      type: "text",
+      onInput: (event) => void inputText(event.target.value),
+      value: inputText,
+    },
     { tag: "button", onClick: addTodo, children: "Add" },
     todos.map((todo) => ({
       children: [
@@ -277,7 +283,7 @@ const view = {
         {
           tag: "input",
           type: "text",
-          onInput: todo.title,
+          onInput: (event) => void todo.title(event.target.value),
           value: todo.title,
         },
         {
@@ -288,8 +294,7 @@ const view = {
       ],
     })),
   ],
-};
-patch(document.body, view);
+});
 ```
 
 ### HyperScript
