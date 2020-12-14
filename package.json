@@ -1,0 +1,19 @@
+{
+  "name": "@nonphoto/bloom",
+  "version": "1.0.0",
+  "description": "A small toolkit for manipulating the DOM declaratively.",
+  "main": "dom.js",
+  "scripts": {
+    "test": "exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nonphoto/bloom.git"
+  },
+  "author": "Jonas Luebbers",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nonphoto/bloom/issues"
+  },
+  "homepage": "https://github.com/nonphoto/bloom#readme"
+}
