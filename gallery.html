@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <script type="module">
+      import * as dom from "./dom.js";
+      import S from "https://cdn.skypack.dev/s-js";
+      import SArray from "https://cdn.skypack.dev/s-array";
+
+      const fitRect = (rect, target) => {
+        var sw = target[2] / rect[2];
+        var sh = target[3] / rect[3];
+        var scale = (sw + sh) / 2;
+
+        return [
+          target[0] + (target[2] - rect[2] * scale) / 2,
+          target[1] + (target[3] - rect[3] * scale) / 2,
+          rect[2] * scale,
+          rect[3] * scale,
+        ];
+      };
+
+      const items = [
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1509957660513-3cfee07defec?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=2774&q=80",
+            aspectRatio: 406 / 640,
+          },
+          title: "Alpha",
+        },
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1497377701144-65a4a020f4c9?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1428&q=80",
+            aspectRatio: 733 / 640,
+          },
+          title: "Bravo",
+        },
+
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1531523499679-7416e782dd96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=2468&q=80",
+            aspectRatio: 479 / 640,
+          },
+          title: "Charlie",
+        },
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1535629097462-c777c5b466a1?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1162&q=80",
+            aspectRatio: 1139 / 640,
+          },
+          title: "Delta",
+        },
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1506170206-a6920d212828?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=2978&q=80",
+            aspectRatio: 360 / 640,
+          },
+          title: "Echo",
+        },
+      ];
+
+      const Crossfade = ({ activeKey, children, ...other }) => {
+        const container = dom.create(other);
+        const childMap = new Map(
+          children.map(({ key, ...child }) => [key, dom.create(child)])
+        );
+        S.on(activeKey, () => {
+          if (activeKey()) {
+            const child = childMap.get(activeKey()).cloneNode();
+            container.appendChild(child);
+            const animation = child.animate([{ opacity: 0 }, { opacity: 1 }], {
+              duration: 200,
+            });
+            animation.onfinish = () => {
+              let c = container.firstChild;
+              while (c instanceof Node && c !== child) {
+                container.removeChild(c);
+                c = container.firstChild;
+              }
+            };
+          }
+        });
+        return container;
+      };
+
+      const Transform = ({ translate, scale, style, children, ...other }) => {
+        return {
+          ...other,
+          style: {
+            ...style,
+            transform: S(() =>
+              "".concat(
+                `translate(${translate()[0]}px, ${translate()[1]}px)`,
+                `translate(-50%, -50%)`,
+                `scale(${scale()[0]}, ${scale()[1]})`
+              )
+            ),
+          },
+          children,
+        };
+      };
+
+      S.root(() => {
+        const t = S.data(0);
+        const loop = (_t) => (t(_t), requestAnimationFrame(loop));
+        const images = items.map((item) => {
+          const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
+          return { rect, ...item.image, isActive: S.data(false) };
+        });
+        const activeImage = S(() => images.find((image) => image.isActive()));
+        const containerScale = S.on(
+          t,
+          ([w, h]) => {
+            const c = 0.2;
+            const [, , wt, ht] = activeImage()
+              ? activeImage().rect
+              : [0, 0, 1.5, 0];
+            return [w + (wt - w) * c, h + (ht - h) * c];
+          },
+          [1.5, 0]
+        );
+        const mouse = S.data([0, 0]);
+        const main = {
+          style: {
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "100vh",
+          },
+          children: [
+            Transform({
+              style: {
+                overflow: "hidden",
+                pointerEvents: "none",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "50vmin",
+                height: "50vmin",
+              },
+              translate: mouse,
+              scale: containerScale,
+              children: Crossfade({
+                activeKey: S(() =>
+                  activeImage() ? activeImage().src : undefined
+                ),
+                children: images.map(({ src, isActive }) => ({
+                  tag: "img",
+                  key: src,
+                  src,
+                  style: {
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                    top: 0,
+                    left: 0,
+                  },
+                })),
+              }),
+            }),
+            items.map(({ title }, i) => ({
+              tag: "a",
+              onmouseenter: () => {
+                images[i].isActive(true);
+              },
+              onmouseleave: () => images[i].isActive(false),
+              style: {
+                fontFamily: "-apple-system, sans-serif",
+                fontSize: "6rem",
+                letterSpacing: "-0.06ch",
+                margin: 0,
+                cursor: "pointer",
+              },
+              children: title,
+            })),
+          ],
+        };
+        dom.patch(document.body, main);
+        document.addEventListener("mousemove", (event) =>
+          mouse([event.clientX, event.clientY])
+        );
+        loop();
+      });
+    </script>
+  </body>
+</html>

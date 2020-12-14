@@ -1,74 +1,9 @@
 import S from "https://cdn.skypack.dev/s-js";
 
-export const syntheticEventNames = new Set([
-  "keydown",
-  "keypress",
-  "keyup",
-  "click",
-  "contextmenu",
-  "doubleclick",
-  "drag",
-  "dragend",
-  "dragenter",
-  "dragexit",
-  "dragleave",
-  "dragover",
-  "dragstart",
-  "drop",
-  "mousedown",
-  "mouseenter",
-  "mouseleave",
-  "mousemove",
-  "mouseout",
-  "mouseover",
-  "mouseup",
-  "pointerdown",
-  "pointermove",
-  "pointerup",
-  "pointercancel",
-  "pointerenter",
-  "pointerleave",
-  "pointerover",
-  "pointerout",
-  "touchcancel",
-  "touchend",
-  "touchmove",
-  "touchstart",
-]);
-
 export const namespaces = {
   xlink: "http://www.w3.org/1999/xlink",
   xml: "http://www.w3.org/XML/1998/namespace",
 };
-
-const eventRegistry = new Set();
-
-function syntheticEventListener(event) {
-  const key = `__${event.type}`;
-  let node = event.target;
-  while (node !== null) {
-    const handler = node[key];
-    if (handler) {
-      handler(event);
-      if (event.cancelBubble) return;
-    }
-    node = node.parentNode;
-  }
-}
-
-export function initSyntheticEvent(key) {
-  if (!eventRegistry.has(key)) {
-    eventRegistry.add(key);
-    document.addEventListener(key, syntheticEventListener);
-  }
-}
-
-export function clearSyntheticEvents() {
-  for (let key of eventRegistry.keys()) {
-    document.removeEventListener(key, syntheticEventListener);
-  }
-  eventRegistry.clear();
-}
 
 export function setAttribute(node, name, value) {
   if (typeof value === "function") {
@@ -140,13 +75,7 @@ export function assign(node, props) {
       value(node);
     } else if (key.startsWith("on")) {
       key = key.toLowerCase();
-      const eventName = key.slice(2);
-      if (syntheticEventNames.has(eventName)) {
-        node[`__${eventName}`] = value;
-        initSyntheticEvent(eventName);
-      } else {
-        node[key] = value;
-      }
+      node[key] = value;
     } else if (key.includes(":")) {
       const namespace = namespaces[key.split(":")[0]];
       if (namespace) {
