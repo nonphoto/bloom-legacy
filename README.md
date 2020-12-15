@@ -2,6 +2,19 @@
 
 Bloom is a small toolkit for manipulating the DOM. It provides a declarative API and reactive behavior in combination with [S](https://github.com/adamhaile/S).
 
+![](example.gif)
+
+## Why
+
+- **Small**: Less than 300 SLOC without S.
+- **Minimal**: The API consists of only a handful of functions.
+- **Fast**: Reactive updates only change the dependent part of the DOM with no diffing needed. This means reactive values can be animated in real-time with no performance degradation.
+- **Flexible**: Create anything from high performance animations to single-page apps.
+- **Declarative**: Define the entire structure of your document with one data structure.
+- **No compilation necessary**: Just import as an ES Module and use object literals to define nodes, no special syntax needed.
+- **Obvious constraints**: no "rules of hooks" or other special conventions are necessary.
+- **No implicit coupling**: satisfies the [Locality of Behavior](https://htmx.org/essays/locality-of-behaviour/) principle.
+
 ## API
 
 ### Create
@@ -344,3 +357,20 @@ console.log(view);
   </ul>
 */
 ```
+
+## Planned Features
+
+- Performance improvements
+- Testing
+- Bring your own stream library
+- Declare [three.js](https://threejs.org/) scene graph as part of the object tree
+- Tools for automatically attaching reactive behavior to an existing document
+- Static site generator?
+
+## Acknowledgements
+
+- Adam Haile, [S](https://github.com/adamhaile/S), and [Surplus](https://github.com/adamhaile/surplus)
+- Freak13's [Stage0](https://github.com/Freak613/stage0)
+- [Composing Reactive Animations](http://conal.net/fran/tutorial.htm)
+- [SolidJS: Reactivity to Rendering](https://indepth.dev/posts/1289/solidjs-reactivity-to-rendering)
+- [The Misunderstood Roots of FRP Can Save Programming](https://futureofcoding.org/essays/dctp)
