@@ -15,5 +15,11 @@
   "bugs": {
     "url": "https://github.com/nonphoto/bloom/issues"
   },
-  "homepage": "https://github.com/nonphoto/bloom#readme"
+  "homepage": "https://github.com/nonphoto/bloom#readme",
+  "directories": {
+    "example": "examples"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
 }
