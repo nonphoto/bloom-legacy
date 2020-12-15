@@ -8,7 +8,7 @@ Bloom is a small toolkit for manipulating the DOM. It provides a declarative API
 
 - **Small**: Less than 300 SLOC without S.
 - **Minimal**: The API consists of only a handful of functions.
-- **Fast**: Reactive updates only change the dependent part of the DOM with no diffing needed. This means reactive values can be animated in real-time with no performance degradation.
+- **Fast**: Reactive updates only change the dependent part of the DOM with no diffing needed. This means reactive values can be animated in real-time with no performance loss.
 - **Flexible**: Create anything from high performance animations to single-page apps.
 - **Declarative**: Define the entire structure of your document with one data structure.
 - **No compilation necessary**: Just import as an ES Module and use object literals to define nodes, no special syntax needed.
@@ -45,6 +45,7 @@ create({
   style: { opacity: 0.5 },
   classList: ["class-1", "class-2"],
   children: "Link",
+  onClick: console.log,
 });
 // <a href="/" hidden style="opacity: 0.5;" class="class-1 class-2">Link</a>
 ```
@@ -171,22 +172,20 @@ console.log(a.isSameNode(b));
 // true
 console.log(b);
 /*
-  <ul>
-    <li>Alpha</li>
-    <li>Bravo</li>
-    <li>Charlie</li>
-  </ul>
+  <li>Alpha</li>
+  <li>Bravo</li>
+  <li>Charlie</li>
 */
 ```
 
-If `parent` already has children, they will be updated—not replaced—if possible.
+`patch` returns a `Node` or `Node` array representing the new children of `parent`. If `parent` already has children, they will be updated—not replaced—if possible.
 
 ```js
 const a = create({ children: "On" });
 const b = a.firstChild;
 const c = patch(a, "Off");
 const d = c.firstChild;
-console.log(b.isSameNode(c));
+console.log(b.isSameNode(d));
 // true
 ```
 
@@ -196,10 +195,10 @@ Patching `undefined`, a `boolean`, an empty array, or `null` will result in a pl
 const element = create({ children: "Hello" });
 patch(element, []);
 console.log(element);
-//<div><!-- [] --></div>
+//<div><!--[]--></div>
 ```
 
-`patch` accepts a third argument, `current`. If present, it will only patch over those nodes.
+`patch` accepts a third argument, `current`. If present, it will only patch over those nodes, and return just the children that were patched.
 
 ```js
 const element = create({ children: ["Alpha", "Charlie"] });
@@ -242,7 +241,7 @@ console.log(element);
 /*
   <div>
     <span>First node</span>
-    <!-- [] -->
+    <!--[]-->
     <span>Last node</span>
   </div>
 */
