@@ -1,6 +1,33 @@
 import S from "https://cdn.skypack.dev/s-js";
+import { paramCase } from "https://cdn.skypack.dev/param-case";
 
-export const namespaces = {
+const htmlVoidElements = [
+  "area",
+  "base",
+  "basefont",
+  "bgsound",
+  "br",
+  "col",
+  "command",
+  "embed",
+  "frame",
+  "hr",
+  "image",
+  "img",
+  "input",
+  "isindex",
+  "keygen",
+  "link",
+  "menuitem",
+  "meta",
+  "nextid",
+  "param",
+  "source",
+  "track",
+  "wbr",
+];
+
+const namespaces = {
   xlink: "http://www.w3.org/1999/xlink",
   xml: "http://www.w3.org/XML/1998/namespace",
 };
@@ -220,4 +247,37 @@ export function create(data) {
 
 function isArrayLike(object) {
   return Array.isArray(object) || object instanceof NodeList;
+}
+
+export function serialize(data) {
+  if (typeof data === "string") {
+    return data;
+  } else if (typeof data === "function") {
+    return serialize(data());
+  } else if (Array.isArray(data)) {
+    return data.map(serialize).join("");
+  } else if (typeof data === "object") {
+    const { tag = "div", children, ...rest } = data;
+    const attributes = Object.entries(rest)
+      .filter(([, value]) => typeof value !== "function")
+      .map(([key, value]) => {
+        if (key === "style") {
+          value = Object.entries(value)
+            .filter(([, value2]) => typeof value2 !== "function")
+            .map(([key2, value2]) => `${paramCase(key2)}:${value2.toString()};`)
+            .join("");
+        }
+        return `${paramCase(key)}='${value}'`;
+      });
+    const tagString = [tag, ...attributes].join(" ");
+    if (htmlVoidElements.includes(tag)) {
+      return `<${tagString}/>`;
+    } else {
+      return `<${tagString}>${serialize(children)}</${tag}>`;
+    }
+  } else if (data == null) {
+    return "";
+  } else {
+    return data.toString();
+  }
 }
