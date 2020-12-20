@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { patch } from "../index.js";
+      import { time } from "../utils.js";
+      import { canvas } from "../canvas.js";
+      import S from "https://cdn.skypack.dev/s-js";
+
+      patch(
+        document.body,
+        canvas([
+          {
+            op: "fillRect",
+            fill: "rgb(200, 0, 0)",
+            position: S(() => [
+              10 + Math.cos(time() * 0.01),
+              10 + Math.sin(time() * 0.01),
+            ]),
+            size: [50, 50],
+          },
+          {
+            op: "fillRect",
+            fill: "rgba(0, 0, 200, 0.5)",
+            position: [30, 30],
+            size: [50, 50],
+          },
+        ])
+      );
+    </script>
+  </body>
+</html>
