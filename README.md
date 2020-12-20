@@ -1,19 +1,23 @@
 # Bloom
 
-Bloom is a small toolkit for manipulating the DOM. It provides a declarative API and reactive behavior in combination with [S](https://github.com/adamhaile/S).
+Bloom is a small toolkit for manipulating the DOM, with a focus on creative coding and animation. It allows you to declaratively create DOM elements with reactive behavior using streams.
 
-![](example.gif)
+Reactive updates only change the dependent part of the DOM with no diffing needed. This means reactive values can be animated in real-time without any overhead.
 
-## Why
+## Usage
 
-- **Small**: Less than 300 SLOC without S.
-- **Minimal**: The API consists of only a handful of functions.
-- **Fast**: Reactive updates only change the dependent part of the DOM with no diffing needed. This means reactive values can be animated in real-time with no performance loss.
-- **Flexible**: Create anything from high performance animations to single-page apps.
-- **Declarative**: Define the entire structure of your document with one data structure.
-- **No compilation necessary**: Just import as an ES Module and use object literals to define nodes, no special syntax needed.
-- **Obvious constraints**: no "rules of hooks" or other special conventions are necessary.
-- **No implicit coupling**: satisfies the [Locality of Behavior](https://htmx.org/essays/locality-of-behaviour/) principle.
+The recommended way to install is through a CDN, so no bundler is required.
+
+```js
+import * as bloom from "https://cdn.skypack.dev/bloom";
+```
+
+You'll also need a stream library, specifically [S](https://github.com/adamhaile/S), and [SArray](https://github.com/adamhaile/S-array).
+
+```js
+import S from "https://cdn.skypack.dev/s-js";
+import SArray from "https://cdn.skypack.dev/s-array";
+```
 
 ## API
 
@@ -98,7 +102,7 @@ console.log(element);
 // <div>On</div>
 ```
 
-Children are updated intelligently. That is, child nodes will be updated instead of replaced when possible, using `patch` internally (see below). Reactive child arrays can be declared using [SArray](https://github.com/adamhaile/S-array):
+Child nodes will be updated instead of replaced when possible, using `patch` internally (see below). Reactive child arrays can be declared using [SArray](https://github.com/adamhaile/S-array):
 
 ```js
 const items = SArray([]);
@@ -146,11 +150,9 @@ const props = {
   classList: ["class-1", "class-2"],
 };
 const a = create({});
-const b = assign(a, props);
-const c = create(props);
-console.log(a.isSameNode(b));
-// true
-console.log(b.isEqualNode(c));
+assign(a, props);
+const b = create(props);
+console.log(a.isEqualNode(b));
 // true
 ```
 
@@ -262,68 +264,252 @@ console.log(element);
 
 ## Examples
 
-### Todo
+### [Todos](./examples/todo.html)
+
+![](./examples/todo.png)
 
 Adapted from the [Surplus](https://github.com/adamhaile/surplus) simple todos example.
 
 ```js
-const todos = SArray([]);
-const inputText = S.data("");
-const addTodo = () => {
-  todos.push({ title: S.data(inputText()), done: S.data(false) });
-  inputText("");
-};
+import { patch } from "https://cdn.skypack.dev/bloom";
+import S from "https://cdn.skypack.dev/s-js";
+import SArray from "https://cdn.skypack.dev/s-array";
 
-dom.patch(document.body, {
-  children: [
-    { tag: "h1", children: "Todo List" },
-    {
-      tag: "input",
-      type: "text",
-      onInput: (event) => void inputText(event.target.value),
-      value: inputText,
-    },
-    { tag: "button", onClick: addTodo, children: "Add" },
-    todos.map((todo) => ({
-      children: [
-        {
-          tag: "input",
-          type: "checkbox",
-          onInput: todo.done,
-          value: todo.done,
-        },
-        {
-          tag: "input",
-          type: "text",
-          onInput: (event) => void todo.title(event.target.value),
-          value: todo.title,
-        },
-        {
-          tag: "button",
-          onClick: () => todos.remove(todo),
-          children: "Remove",
-        },
-      ],
-    })),
-  ],
+S.root(() => {
+  const todos = SArray([]);
+  const inputText = S.data("");
+  const addTodo = () => {
+    todos.push({ title: S.data(inputText()), done: S.data(false) });
+    inputText("");
+  };
+
+  const Main = {
+    tag: "main",
+    children: [
+      { tag: "h1", children: "Todo List" },
+      {
+        children: [
+          {
+            tag: "input",
+            type: "text",
+            onInput: (event) => void inputText(event.target.value),
+            value: inputText,
+          },
+          { tag: "button", onClick: addTodo, children: "Add" },
+        ],
+      },
+      todos.map((todo) => ({
+        children: [
+          {
+            tag: "input",
+            type: "checkbox",
+            onInput: todo.done,
+            value: todo.done,
+          },
+          {
+            tag: "input",
+            type: "text",
+            onInput: (event) => void todo.title(event.target.value),
+            value: todo.title,
+          },
+          {
+            tag: "button",
+            onClick: () => todos.remove(todo),
+            children: "Remove",
+          },
+        ],
+      })),
+    ],
+  };
+
+  patch(document.body, Main);
 });
 ```
 
-### HyperScript
+### [Kinetic typography](./examples/oscillate.html)
+
+![](./examples/oscillate.gif)
+
+```js
+import { patch } from "https://cdn.skypack.dev/bloom";
+import S from "https://cdn.skypack.dev/s-js";
+
+const text = "OSCILLATE";
+const iterations = 20;
+const colorRange = 180;
+const colorOffset = 1;
+const speed = 0.002;
+const height = 50;
+const spread = 5;
+const range = (n) => [...Array(n).keys()];
+
+S.root(() => {
+  const time = S.data(0);
+  (function loop(t) {
+    time(t);
+    requestAnimationFrame(loop);
+  })();
+
+  const Trail = (char, i) => {
+    return range(iterations).map((j) => {
+      const p = j / iterations;
+      const h = (colorOffset + p) * colorRange;
+      const l = p * 100;
+      const transform = S(() => {
+        const y = Math.sin(time() * speed + p * spread + i) * height;
+        return `translateY(${y}%)`;
+      });
+      return {
+        tag: "span",
+        children: char,
+        style: {
+          color: `hsl(${h}deg, 50%, ${l}%)`,
+          transform,
+        },
+      };
+    });
+  };
+
+  const Main = {
+    tag: "main",
+    children: text.split("").map((char, i) => ({
+      tag: "span",
+      children: Trail(char, i),
+    })),
+  };
+
+  patch(document.body, Main);
+});
+```
+
+### [Animated gallery](./examples/gallery.html)
+
+![](./examples/gallery.gif)
+
+```js
+import { create, patch } from "https://cdn.skypack.dev/bloom";
+import S from "https://cdn.skypack.dev/s-js";
+
+const fitRect = (rect, target) => {
+  // ...
+};
+
+const items = [
+  // ...
+];
+
+const Crossfade = ({ activeKey, children, ...other }) => {
+  const container = create(other);
+  const childMap = new Map(
+    children.map(({ key, ...child }) => [key, create(child)])
+  );
+  S.on(activeKey, () => {
+    if (activeKey()) {
+      const child = childMap.get(activeKey()).cloneNode();
+      container.appendChild(child);
+      const animation = child.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 200,
+      });
+      animation.onfinish = () => {
+        let c = container.firstChild;
+        while (c instanceof Node && c !== child) {
+          container.removeChild(c);
+          c = container.firstChild;
+        }
+      };
+    }
+  });
+  return container;
+};
+
+const Transform = ({ translate, scale, style, children, ...other }) => {
+  return {
+    ...other,
+    style: {
+      ...style,
+      transform: S(() =>
+        "".concat(
+          `translate(${translate()[0]}px, ${translate()[1]}px)`,
+          `translate(-50%, -50%)`,
+          `scale(${scale()[0]}, ${scale()[1]})`
+        )
+      ),
+    },
+    children,
+  };
+};
+
+S.root(() => {
+  const time = S.data(0);
+  (function loop(t) {
+    time(t);
+    requestAnimationFrame(loop);
+  })();
+
+  const images = items.map((item) => {
+    const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
+    return { rect, ...item.image, isActive: S.data(false) };
+  });
+  const activeImage = S(() => images.find((image) => image.isActive()));
+  const containerScale = S.on(
+    time,
+    ([w, h]) => {
+      const c = 0.2;
+      const [, , wt, ht] = activeImage() ? activeImage().rect : [0, 0, 1.5, 0];
+      return [w + (wt - w) * c, h + (ht - h) * c];
+    },
+    [1.5, 0]
+  );
+
+  const mouse = S.data([0, 0]);
+  document.addEventListener("mousemove", (event) =>
+    mouse([event.clientX, event.clientY])
+  );
+
+  const Main = {
+    tag: "main",
+    children: [
+      Transform({
+        classList: "image-container",
+        translate: mouse,
+        scale: containerScale,
+        children: Crossfade({
+          activeKey: S(() => (activeImage() ? activeImage().src : undefined)),
+          children: images.map(({ src, isActive }) => ({
+            tag: "img",
+            key: src,
+            src,
+            classList: "image",
+          })),
+        }),
+      }),
+      items.map(({ title }, i) => ({
+        tag: "a",
+        onmouseenter: () => {
+          images[i].isActive(true);
+        },
+        onmouseleave: () => images[i].isActive(false),
+        classList: "link",
+        children: title,
+      })),
+    ],
+  };
+
+  patch(document.body, Main);
+});
+```
+
+## FAQ
+
+### I prefer HyperScript-like syntax, so...?
 
 If you don't like writing object literal notation, you can create your own [HyperScript](https://github.com/hyperhype/hyperscript) inspired element factory.
 
 ```js
-function h(tag, props, ...children) {
-  return create({ tag, ...props, children });
+function h(tag, ...children) {
+  return create({ tag, children });
 }
-const view = h(
-  "ul",
-  {},
-  h("li", {}, "Alpha"),
-  h("li", {}, "Bravo"),
-  h("li", {}, "Charlie")
-);
+const view = h("ul", h("li", "Alpha"), h("li", "Bravo"), h("li", "Charlie"));
 console.log(view);
 /*
   <ul>
@@ -334,19 +520,16 @@ console.log(view);
 */
 ```
 
-Alternatively, you can create a separte factory for each tag name.
+Alternatively, you can create a factory for each tag name.
 
 ```js
 const tagNames = [
   // ...
 ];
 const elements = Object.fromEntries(
-  tagNames.map((tag) => [
-    tag,
-    (props, ...children) => create({ tag, ...props, children }),
-  ])
+  tagNames.map((tag) => [tag, (...children) => create({ tag, children })])
 );
-const view = ul({}, li({}, "Alpha"), li({}, "Bravo"), li({}, "Charlie"));
+const view = ul(li("Alpha"), li("Bravo"), li("Charlie"));
 console.log(view);
 /*
   <ul>
@@ -357,14 +540,13 @@ console.log(view);
 */
 ```
 
-## Planned Features
+## Coming soon
 
-- Performance improvements
 - Testing
 - Bring your own stream library
 - Declare [three.js](https://threejs.org/) scene graph as part of the object tree
 - Tools for automatically attaching reactive behavior to an existing document
-- Static site generator?
+- Serialization
 
 ## Acknowledgements
 
