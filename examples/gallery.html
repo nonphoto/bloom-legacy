@@ -43,7 +43,8 @@
   </head>
   <body>
     <script type="module">
-      import * as dom from "../dom.js";
+      import { patch, create } from "../index.js";
+      import { mouse, time } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
 
       const fitRect = (rect, target) => {
@@ -104,9 +105,9 @@
       ];
 
       const Crossfade = ({ activeKey, children, ...other }) => {
-        const container = dom.create(other);
+        const container = create(other);
         const childMap = new Map(
-          children.map(({ key, ...child }) => [key, dom.create(child)])
+          children.map(({ key, ...child }) => [key, create(child)])
         );
         S.on(activeKey, () => {
           if (activeKey()) {
@@ -145,12 +146,6 @@
       };
 
       S.root(() => {
-        const time = S.data(0);
-        (function loop(t) {
-          time(t);
-          requestAnimationFrame(loop);
-        })();
-
         const images = items.map((item) => {
           const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
           return { rect, ...item.image, isActive: S.data(false) };
@@ -166,11 +161,6 @@
             return [w + (wt - w) * c, h + (ht - h) * c];
           },
           [1.5, 0]
-        );
-
-        const mouse = S.data([0, 0]);
-        document.addEventListener("mousemove", (event) =>
-          mouse([event.clientX, event.clientY])
         );
 
         const Main = {
@@ -204,7 +194,7 @@
           ],
         };
 
-        dom.patch(document.body, Main);
+        patch(document.body, Main);
       });
     </script>
   </body>

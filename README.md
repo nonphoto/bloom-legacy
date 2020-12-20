@@ -332,6 +332,7 @@ S.root(() => {
 
 ```js
 import { patch } from "https://cdn.skypack.dev/bloom";
+import { time } from "https://cdn.skypack.dev/bloom/utils.js";
 import S from "https://cdn.skypack.dev/s-js";
 
 const text = "OSCILLATE";
@@ -344,12 +345,6 @@ const spread = 5;
 const range = (n) => [...Array(n).keys()];
 
 S.root(() => {
-  const time = S.data(0);
-  (function loop(t) {
-    time(t);
-    requestAnimationFrame(loop);
-  })();
-
   const Trail = (char, i) => {
     return range(iterations).map((j) => {
       const p = j / iterations;
@@ -388,6 +383,7 @@ S.root(() => {
 
 ```js
 import { create, patch } from "https://cdn.skypack.dev/bloom";
+import { mouse, time } from "https://cdn.skypack.dev/bloom/utils.js";
 import S from "https://cdn.skypack.dev/s-js";
 
 const fitRect = (rect, target) => {
@@ -440,12 +436,6 @@ const Transform = ({ translate, scale, style, children, ...other }) => {
 };
 
 S.root(() => {
-  const time = S.data(0);
-  (function loop(t) {
-    time(t);
-    requestAnimationFrame(loop);
-  })();
-
   const images = items.map((item) => {
     const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
     return { rect, ...item.image, isActive: S.data(false) };
@@ -459,11 +449,6 @@ S.root(() => {
       return [w + (wt - w) * c, h + (ht - h) * c];
     },
     [1.5, 0]
-  );
-
-  const mouse = S.data([0, 0]);
-  document.addEventListener("mousemove", (event) =>
-    mouse([event.clientX, event.clientY])
   );
 
   const Main = {
@@ -543,6 +528,8 @@ console.log(view);
 ## Coming soon
 
 - Testing
+- More FAQs
+- More utils
 - Bring your own stream library
 - Declare [three.js](https://threejs.org/) scene graph as part of the object tree
 - Tools for automatically attaching reactive behavior to an existing document

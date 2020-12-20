@@ -37,7 +37,8 @@
   </head>
   <body>
     <script type="module">
-      import * as dom from "../dom.js";
+      import { patch } from "../index.js";
+      import { time } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
 
       const text = "OSCILLATE";
@@ -50,12 +51,6 @@
       const range = (n) => [...Array(n).keys()];
 
       S.root(() => {
-        const time = S.data(0);
-        (function loop(t) {
-          time(t);
-          requestAnimationFrame(loop);
-        })();
-
         const Trail = (char, i) => {
           return range(iterations).map((j) => {
             const p = j / iterations;
@@ -84,7 +79,7 @@
           })),
         };
 
-        dom.patch(document.body, Main);
+        patch(document.body, Main);
       });
     </script>
   </body>

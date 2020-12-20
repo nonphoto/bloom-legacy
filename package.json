@@ -1,8 +1,23 @@
 {
   "name": "@nonphoto/bloom",
   "version": "1.0.0",
-  "description": "A small toolkit for manipulating the DOM declaratively.",
-  "main": "dom.js",
+  "description": "A small toolkit for manipulating the DOM, with a focus on creative coding and animation.",
+  "main": "index.js",
+  "exports": {
+    "import": "./index.js",
+    "default": "./index.js"
+  },
+  "keywords": [
+    "animation",
+    "reactive",
+    "stream",
+    "dom",
+    "patch",
+    "assign",
+    "create",
+    "bloom"
+  ],
+  "type": "module",
   "scripts": {
     "test": "exit 0"
   },
@@ -15,8 +30,5 @@
   "bugs": {
     "url": "https://github.com/nonphoto/bloom/issues"
   },
-  "homepage": "https://github.com/nonphoto/bloom#readme",
-  "directories": {
-    "example": "examples"
-  }
+  "homepage": "https://github.com/nonphoto/bloom#readme"
 }

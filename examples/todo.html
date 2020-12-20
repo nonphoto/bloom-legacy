@@ -49,7 +49,7 @@
   </head>
   <body>
     <script type="module">
-      import * as dom from "../dom.js";
+      import { patch } from "../index.js";
       import S from "https://cdn.skypack.dev/s-js";
       import SArray from "https://cdn.skypack.dev/s-array";
 
@@ -100,7 +100,7 @@
           ],
         };
 
-        dom.patch(document.body, Main);
+        patch(document.body, Main);
       });
     </script>
   </body>
