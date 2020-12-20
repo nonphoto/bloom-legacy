@@ -7,6 +7,38 @@
         margin: 0;
         padding: 0;
       }
+      main {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .link {
+        position: relative;
+        font-family: -apple-system, sans-serif;
+        font-size: 6rem;
+        letter-spacing: -0.06ch;
+        margin: 0;
+        cursor: "pointer";
+      }
+      .image-container {
+        overflow: hidden;
+        pointer-events: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 50vmin;
+        height: 50vmin;
+      }
+      .image {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+      }
     </style>
   </head>
   <body>
@@ -113,15 +145,19 @@
       };
 
       S.root(() => {
-        const t = S.data(0);
-        const loop = (_t) => (t(_t), requestAnimationFrame(loop));
+        const time = S.data(0);
+        (function loop(t) {
+          time(t);
+          requestAnimationFrame(loop);
+        })();
+
         const images = items.map((item) => {
           const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
           return { rect, ...item.image, isActive: S.data(false) };
         });
         const activeImage = S(() => images.find((image) => image.isActive()));
         const containerScale = S.on(
-          t,
+          time,
           ([w, h]) => {
             const c = 0.2;
             const [, , wt, ht] = activeImage()
@@ -131,27 +167,17 @@
           },
           [1.5, 0]
         );
+
         const mouse = S.data([0, 0]);
-        const main = {
-          style: {
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "100vh",
-          },
+        document.addEventListener("mousemove", (event) =>
+          mouse([event.clientX, event.clientY])
+        );
+
+        const Main = {
+          tag: "main",
           children: [
             Transform({
-              style: {
-                overflow: "hidden",
-                pointerEvents: "none",
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "50vmin",
-                height: "50vmin",
-              },
+              classList: "image-container",
               translate: mouse,
               scale: containerScale,
               children: Crossfade({
@@ -162,13 +188,7 @@
                   tag: "img",
                   key: src,
                   src,
-                  style: {
-                    position: "absolute",
-                    width: "100%",
-                    height: "100%",
-                    top: 0,
-                    left: 0,
-                  },
+                  classList: "image",
                 })),
               }),
             }),
@@ -178,23 +198,13 @@
                 images[i].isActive(true);
               },
               onmouseleave: () => images[i].isActive(false),
-              style: {
-                position: "relative",
-                fontFamily: "-apple-system, sans-serif",
-                fontSize: "6rem",
-                letterSpacing: "-0.06ch",
-                margin: 0,
-                cursor: "pointer",
-              },
+              classList: "link",
               children: title,
             })),
           ],
         };
-        dom.patch(document.body, main);
-        document.addEventListener("mousemove", (event) =>
-          mouse([event.clientX, event.clientY])
-        );
-        loop();
+
+        dom.patch(document.body, Main);
       });
     </script>
   </body>

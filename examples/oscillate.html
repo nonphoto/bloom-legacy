@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Space Mono", monospace;
+        font-size: 15vw;
+        background: black;
+      }
+      main {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        height: 100vh;
+      }
+      main > span {
+        position: relative;
+      }
+      main > span > * {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      main > span > *:first-child {
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import * as dom from "../dom.js";
+      import S from "https://cdn.skypack.dev/s-js";
+
+      const text = "OSCILLATE";
+      const iterations = 20;
+      const colorRange = 180;
+      const colorOffset = 1;
+      const speed = 0.002;
+      const height = 50;
+      const spread = 1;
+      const range = (n) => [...Array(n).keys()];
+
+      S.root(() => {
+        const time = S.data(0);
+        (function loop(t) {
+          time(t);
+          requestAnimationFrame(loop);
+        })();
+
+        const Trail = (char, i) => {
+          return range(iterations).map((j) => {
+            const p = j / iterations;
+            const h = (colorOffset + p) * colorRange;
+            const l = p * 100;
+            const transform = S(() => {
+              const y = Math.sin(time() * speed + p * spread + i) * height;
+              return `translateY(${y}%)`;
+            });
+            return {
+              tag: "span",
+              children: char,
+              style: {
+                color: `hsl(${h}deg, 50%, ${l}%)`,
+                transform,
+              },
+            };
+          });
+        };
+
+        const Main = {
+          tag: "main",
+          children: text.split("").map((char, i) => ({
+            tag: "span",
+            children: Trail(char, i),
+          })),
+        };
+
+        dom.patch(document.body, Main);
+      });
+    </script>
+  </body>
+</html>
