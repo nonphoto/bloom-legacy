@@ -25,18 +25,18 @@
         canvas([
           {
             op: "fillRect",
-            fill: "rgb(200, 0, 0)",
-            position: S(() => [
+            fillStyle: "rgb(200, 0, 0)",
+            args: S(() => [
               10 + Math.cos(time() * 0.01),
               10 + Math.sin(time() * 0.01),
+              50,
+              50,
             ]),
-            size: [50, 50],
           },
           {
             op: "fillRect",
-            fill: "rgba(0, 0, 200, 0.5)",
-            position: [30, 30],
-            size: [50, 50],
+            fillStyle: "rgba(0, 0, 200, 0.5)",
+            args: [30, 30, 50, 50],
           },
         ])
       );

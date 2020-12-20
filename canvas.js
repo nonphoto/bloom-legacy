@@ -14,13 +14,12 @@ function draw(context, data) {
       draw(context, item);
     }
   } else {
-    context.fillStyle = resolve(data.fill) || "white";
-    context.strokeStyle = resolve(data.stroke) || "black";
-    if (resolve(data.op)) {
-      context[resolve(data.op)](
-        ...resolve(data.position),
-        ...resolve(data.size)
-      );
+    const { op, args, children, ...props } = data;
+    for (let [key, value] of Object.entries(props)) {
+      context[key] = resolve(value);
+    }
+    if (op) {
+      context[op](...resolve(args));
     }
   }
 }
@@ -30,7 +29,6 @@ export function canvas(data) {
   const context = canvas.getContext("2d");
   const observer = new ResizeObserver((entries) => {
     for (let entry of entries) {
-      console.log(entry.contentBoxSize);
       entry.target.width = entry.contentBoxSize.inlineSize;
       entry.target.height = entry.contentBoxSize.blockSize;
       context.clearRect(0, 0, entry.target.width, entry.target.height);
