@@ -14,13 +14,28 @@ function draw(context, data) {
       draw(context, item);
     }
   } else {
-    const { op, args, children, ...props } = data;
+    const { translate, scale, path, children, ...props } = data;
+    context.save();
+    context.beginPath();
     for (let [key, value] of Object.entries(props)) {
+      console.log(key, value);
       context[key] = resolve(value);
     }
-    if (op) {
-      context[op](...resolve(args));
+    if (resolve(translate)) {
+      context.translate(...resolve(translate));
     }
+    if (resolve(scale)) {
+      context.scale(...resolve(scale));
+    }
+    if (path) {
+      for (let { op, args } of path) {
+        context[op](...args);
+      }
+    }
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.restore();
   }
 }
 

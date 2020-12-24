@@ -24,20 +24,24 @@
         document.body,
         canvas([
           {
-            op: "fillRect",
             fillStyle: "rgb(200, 0, 0)",
-            args: S(() => [
+            translate: S(() => [
               10 + Math.cos(time() * 0.01),
               10 + Math.sin(time() * 0.01),
-              50,
-              50,
             ]),
+            scale: [50, 50],
+            path: [
+              { op: "moveTo", args: [0, 0] },
+              { op: "lineTo", args: [1, 0] },
+              { op: "lineTo", args: [1, 1] },
+              { op: "lineTo", args: [0, 1] },
+            ],
           },
-          {
-            op: "fillRect",
-            fillStyle: "rgba(0, 0, 200, 0.5)",
-            args: [30, 30, 50, 50],
-          },
+          // {
+          //   op: "fillRect",
+          //   fillStyle: "rgba(0, 0, 200, 0.5)",
+          //   args: [30, 30, 50, 50],
+          // },
         ])
       );
     </script>
