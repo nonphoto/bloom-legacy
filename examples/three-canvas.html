@@ -25,38 +25,38 @@
         document.body,
         threeCanvas([
           {
-            type: "Group",
-            rotation: S(() => [0, 0, time() * 0.0005]),
+            constructor: three.Group,
+            "rotation.z": S(() => time() * 0.0005),
             children: () => {
               const geometry = new three.BoxGeometry();
               return [
                 {
-                  type: "Mesh",
+                  constructor: three.Mesh,
                   geometry,
                   material: new three.MeshPhongMaterial({
                     color: "orange",
                   }),
-                  rotation: S(() => [time() * 0.001, time() * 0.001, 1]),
-                  position: [-1, 0, 0],
+                  "rotation.x": S(() => time() * 0.001),
+                  "position.x": -1,
                 },
                 {
-                  type: "Mesh",
+                  constructor: three.Mesh,
                   geometry,
                   material: new three.MeshPhongMaterial({
                     color: "pink",
                   }),
-                  rotation: S(() => [time() * -0.001, time() * 0.001, 1]),
-                  position: [1, 0, 0],
+                  "rotation.x": S(() => time() * -0.001),
+                  "position.x": 1,
                 },
               ];
             },
           },
           {
-            type: "PointLight",
-            position: [0, 0, 10],
+            constructor: three.PointLight,
+            "position.z": 10,
           },
           {
-            type: "AmbientLight",
+            constructor: three.AmbientLight,
             color: new three.Color("red"),
             intensity: S(() => Math.sin(time() * 0.001) * 0.5 + 0.5),
           },

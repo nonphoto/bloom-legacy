@@ -1,5 +1,6 @@
 import * as three from "https://cdn.skypack.dev/three";
 import S from "https://cdn.skypack.dev/s-js";
+import set from "https://cdn.skypack.dev/set-value";
 
 export function threeCanvas(data) {
   const scene = new three.Scene();
@@ -95,28 +96,19 @@ function reconcile(parent, array, current) {
 function assign(node, props) {
   for (const key in props) {
     const value = props[key];
-    if (key === "type") {
+    if (key === "constructor") {
       continue;
     } else if (key === "children") {
       patch(node, value);
-    } else if (
-      typeof node[key] === "object" &&
-      typeof node[key].set === "function"
-    ) {
-      if (typeof value === "function") {
-        S(() => {
-          node[key].set(...(Array.isArray(value()) ? value() : [value()]));
-        });
-      } else {
-        node[key].set(...(Array.isArray(value) ? value : [value]));
-      }
+    } else if (key.startsWith("on")) {
+      node[key] = value;
     } else {
       if (typeof value === "function") {
         S(() => {
-          node[key] = value();
+          set(node, key, value());
         });
       } else {
-        node[key] = value;
+        set(node, key, value);
       }
     }
   }
@@ -125,8 +117,9 @@ function assign(node, props) {
 function create(data) {
   if (Array.isArray(data)) {
   } else if (typeof data === "object") {
-    const node = new three[data.type]();
-    assign(node, data);
+    const { constructor, ...props } = data;
+    const node = new constructor();
+    assign(node, props);
     return node;
   } else {
     return new three.Group();
