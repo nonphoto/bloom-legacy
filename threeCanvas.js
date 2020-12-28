@@ -4,13 +4,9 @@ import S from "https://cdn.skypack.dev/s-js";
 import set from "https://cdn.skypack.dev/set-value";
 
 export function threeCanvas(options, data) {
+  const pixelRatio = 2;
   const scene = new three.Scene();
-  const camera = new three.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
+  const camera = new three.PerspectiveCamera(75, 2, 0.1, 1000);
   camera.position.z = 5;
   Object.assign(camera, options.camera);
   const renderer = new three.WebGLRenderer({
@@ -19,22 +15,40 @@ export function threeCanvas(options, data) {
     powerPreference: "high-performance",
     ...options.renderer,
   });
-  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  renderer.domElement.style.width = renderer.domElement.style.height = "100%";
   patch(scene, data);
   const observer = new ResizeObserver(() => {
-    renderer.setSize(
-      renderer.domElement.clientWidth,
-      renderer.domElement.clientHeight
-    );
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth * pixelRatio;
+    const height = canvas.clientHeight * pixelRatio;
+    renderer.setSize(width, height, false);
+    camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    camera.updateProjectionMatrix();
     renderer.render(scene, camera);
   });
   observer.observe(renderer.domElement);
+  const raycaster = new three.Raycaster();
+  const mouse = new three.Vector2();
+  const onMousemove = (event) => {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  };
+  window.addEventListener("mousemove", onMousemove, false);
   S.on(time, () => {
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children);
+    if (intersects.length > 0) {
+      console.log(intersects);
+    }
     renderer.render(scene, camera);
   });
   S.cleanup(() => {
+    observer.disconnect();
     renderer.dispose();
     camera.dispose();
+    raycaster.dispose();
+    window.removeEventListener("mousemove", onMousemove, false);
   });
   return renderer.domElement;
 }
