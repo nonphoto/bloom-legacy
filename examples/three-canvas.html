@@ -19,46 +19,50 @@
       import S from "https://cdn.skypack.dev/s-js";
       import * as three from "https://cdn.skypack.dev/three";
 
+      const Item = ({ x, t }) => {
+        return {
+          constructor: three.Mesh,
+          geometry: new three.BoxGeometry(),
+          material: new three.MeshPhongMaterial({
+            color: "orange",
+          }),
+          "rotation.x": S(() => time() * 0.001 + t),
+          "rotation.y": S(() => time() * 0.002 + t),
+          "position.x": x,
+        };
+      };
+
+      const range = (n) => [...Array(n).keys()];
+
+      const count = S.data(1);
+
       patch(
         document.body,
-        threeCanvas({}, [
+        [
           {
-            constructor: three.Group,
-            "rotation.z": S(() => time() * 0.0005),
-            children: () => {
-              const geometry = new three.BoxGeometry();
-              return [
-                {
-                  constructor: three.Mesh,
-                  geometry,
-                  material: new three.MeshPhongMaterial({
-                    color: "orange",
-                  }),
-                  "rotation.x": S(() => time() * 0.001),
-                  "position.x": -1,
-                },
-                {
-                  constructor: three.Mesh,
-                  geometry,
-                  material: new three.MeshPhongMaterial({
-                    color: "pink",
-                  }),
-                  "rotation.x": S(() => time() * -0.001),
-                  "position.x": 1,
-                },
-              ];
+            tag: "button",
+            children: "more",
+            onClick: () => {
+              count(count() + 1);
             },
           },
-          {
-            constructor: three.PointLight,
-            "position.z": 10,
-          },
-          {
-            constructor: three.AmbientLight,
-            color: new three.Color("red"),
-            intensity: S(() => Math.sin(time() * 0.001) * 0.5 + 0.5),
-          },
-        ]),
+          threeCanvas({}, [
+            S(() =>
+              range(count()).map((_, i) => {
+                return Item({ x: 0.5 + i - S.sample(count) / 2, t: i });
+              })
+            ),
+            {
+              constructor: three.PointLight,
+              "position.z": 10,
+            },
+            {
+              constructor: three.AmbientLight,
+              color: new three.Color("red"),
+              intensity: S(() => Math.sin(time() * 0.001) * 0.5 + 0.5),
+            },
+          ]),
+        ],
         []
       );
     </script>

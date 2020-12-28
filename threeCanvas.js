@@ -39,7 +39,7 @@ export function threeCanvas(options, data) {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(scene.children);
     if (intersects.length > 0) {
-      console.log(intersects);
+      // Do something
     }
     renderer.render(scene, camera);
   });
