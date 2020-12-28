@@ -23,7 +23,7 @@
 
       patch(
         document.body,
-        threeCanvas([
+        threeCanvas({}, [
           {
             constructor: three.Group,
             "rotation.z": S(() => time() * 0.0005),

@@ -1,8 +1,9 @@
 import * as three from "https://cdn.skypack.dev/three";
+import { time } from "./utils.js";
 import S from "https://cdn.skypack.dev/s-js";
 import set from "https://cdn.skypack.dev/set-value";
 
-export function threeCanvas(data) {
+export function threeCanvas(options, data) {
   const scene = new three.Scene();
   const camera = new three.PerspectiveCamera(
     75,
@@ -10,20 +11,31 @@ export function threeCanvas(data) {
     0.1,
     1000
   );
-
-  const renderer = new three.WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
   camera.position.z = 5;
-
+  Object.assign(camera, options.camera);
+  const renderer = new three.WebGLRenderer({
+    antialias: true,
+    alpha: true,
+    powerPreference: "high-performance",
+    ...options.renderer,
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
   patch(scene, data);
-
-  function loop() {
+  const observer = new ResizeObserver(() => {
+    renderer.setSize(
+      renderer.domElement.clientWidth,
+      renderer.domElement.clientHeight
+    );
     renderer.render(scene, camera);
-    requestAnimationFrame(loop);
-  }
-
-  loop();
-
+  });
+  observer.observe(renderer.domElement);
+  S.on(time, () => {
+    renderer.render(scene, camera);
+  });
+  S.cleanup(() => {
+    renderer.dispose();
+    camera.dispose();
+  });
   return renderer.domElement;
 }
 
