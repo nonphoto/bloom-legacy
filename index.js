@@ -32,6 +32,23 @@ const namespaces = {
   xml: "http://www.w3.org/XML/1998/namespace",
 };
 
+const propMap = new WeakMap();
+
+const mutationObserver = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    for (const node of mutation.addedNodes) {
+      if (
+        propMap.has(node) &&
+        typeof propMap.get(node).oninsert === "function"
+      ) {
+        propMap.get(node).oninsert();
+      }
+    }
+  }
+});
+
+mutationObserver.observe(document.body, { subtree: true, childList: true });
+
 export function setAttribute(node, name, value) {
   if (typeof value === "function") {
     S(() => setAttribute(node, name, value()));
@@ -78,10 +95,13 @@ export function setStyle(node, key, value) {
   }
 }
 
-export function assign(node, props) {
-  let key, value;
-  for (key in props) {
+export function update(node, props) {
+  const currentProps = propMap.has(node) ? propMap.get(node) : {};
+  const allKeys = [...Object.keys(currentProps), ...Object.keys(props)];
+  let key, value, current;
+  for (key of allKeys) {
     value = props[key];
+    current = currentProps[key];
     if (key === "tag") {
       continue;
     }
@@ -89,9 +109,11 @@ export function assign(node, props) {
       patch(node, value, node.childNodes);
     } else if (key === "style") {
       if (typeof value === "object") {
-        let styleKey;
-        for (styleKey in value) {
-          setStyle(node, styleKey, value[styleKey]);
+        current ||= {};
+        value ||= {};
+        const allStyleKeys = [...Object.keys(current), ...Object.keys(value)];
+        for (const styleKey of allStyleKeys) {
+          setStyle(node, styleKey, value[styleKey], current[styleKey]);
         }
       } else {
         setAttribute(node, key, value);
@@ -101,8 +123,16 @@ export function assign(node, props) {
     } else if (key === "ref") {
       value(node);
     } else if (key.startsWith("on")) {
-      key = key.toLowerCase();
-      node[key] = value;
+      const eventKey = key.slice(2).toLowerCase();
+      if (["insert", "remove"].includes(key)) {
+        continue;
+      }
+      if (current) {
+        node.removeEventListener(eventKey, current);
+      }
+      if (value) {
+        node.addEventListener(eventKey, value);
+      }
     } else if (key.includes(":")) {
       const namespace = namespaces[key.split(":")[0]];
       if (namespace) {
@@ -116,6 +146,7 @@ export function assign(node, props) {
       setAttribute(node, key, value);
     }
   }
+  propMap.set(node, props);
   return node;
 }
 
@@ -205,7 +236,7 @@ export function patch(parent, value, current) {
     } else if (current instanceof Node) {
       parent.replaceChild(value, current);
     } else {
-      parent.appendChild(value);
+      throw new Error("Not possible");
     }
     return value;
   } else if (valueType === "object") {
@@ -214,7 +245,7 @@ export function patch(parent, value, current) {
       current instanceof Element &&
       tag.toLowerCase() === current.tagName.toLowerCase()
     ) {
-      assign(current, value);
+      update(current, value);
       return current;
     } else {
       return patch(parent, create(value), current);
@@ -232,7 +263,7 @@ export function create(data) {
   } else if (typeof data === "object") {
     const { tag = "div", ...props } = data;
     const element = document.createElement(tag);
-    assign(element, props);
+    update(element, props);
     return element;
   } else if (typeof data === "string") {
     return document.createTextNode(data);
