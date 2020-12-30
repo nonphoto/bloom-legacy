@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 1.5rem;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        padding: 2rem;
+        grid-gap: 2rem;
+        grid-template-columns: 4fr 3fr 2fr 1fr;
+        grid-template-rows: 4fr 3fr 2fr 1fr;
+        min-height: 100vh;
+        user-select: none;
+      }
+
+      li {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef;
+        border: solid 2px #aab;
+        border-radius: 1rem;
+      }
+    </style>
+    <script type="module">
+      import { patch } from "../index.js";
+      import { time } from "../utils.js";
+      import S from "https://cdn.skypack.dev/s-js";
+      import SArray from "https://cdn.skypack.dev/s-array";
+
+      const range = (n) => [...Array(n).keys()];
+      const shuffle = (a) => a.sort(() => Math.random() - 0.5);
+      const items = SArray(
+        range(16).map((index) => ({ index, ref: S.data() }))
+      );
+
+      S.root(() => {
+        const Main = {
+          tag: "ul",
+          onClick: () => items(shuffle(items())),
+          children: items.map(({ index, ref }) => {
+            return {
+              tag: "li",
+              oninsert: () => console.log("insert", index),
+              children: index,
+            };
+          }),
+        };
+
+        patch(document.body, Main, document.body.childNodes);
+      });
+    </script>
+  </head>
+  <body></body>
+</html>

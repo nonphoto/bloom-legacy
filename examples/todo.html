@@ -92,6 +92,7 @@
                 },
                 {
                   tag: "button",
+                  oninsert: () => console.log("insert", todo.title()),
                   onClick: () => todos.remove(todo),
                   children: "Remove",
                 },

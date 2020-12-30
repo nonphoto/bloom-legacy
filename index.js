@@ -34,21 +34,6 @@ const namespaces = {
 
 const propMap = new WeakMap();
 
-const mutationObserver = new MutationObserver((mutations) => {
-  for (const mutation of mutations) {
-    for (const node of mutation.addedNodes) {
-      if (
-        propMap.has(node) &&
-        typeof propMap.get(node).oninsert === "function"
-      ) {
-        propMap.get(node).oninsert();
-      }
-    }
-  }
-});
-
-mutationObserver.observe(document.body, { subtree: true, childList: true });
-
 export function setAttribute(node, name, value) {
   if (typeof value === "function") {
     S(() => setAttribute(node, name, value()));
@@ -80,7 +65,7 @@ export function setProperty(node, key, value) {
 export function setClassList(node, value) {
   if (typeof value === "function") {
     S(() => setClassList(node, value()));
-  } else if (isArrayLike(value)) {
+  } else if (Array.isArray(value)) {
     node.className = value.join(" ");
   } else {
     node.className = value;
@@ -194,7 +179,7 @@ export function patch(parent, value, current) {
   while (typeof current === "function") {
     current = current();
   }
-  if (!(isArrayLike(current) || current instanceof Node)) {
+  if (!current) {
     current = parent.childNodes;
   }
   if (current instanceof NodeList) {
@@ -221,9 +206,9 @@ export function patch(parent, value, current) {
     }
   } else if (valueType === "function") {
     return S((acc) => patch(parent, value(), acc), current);
-  } else if (isArrayLike(value)) {
+  } else if (Array.isArray(value)) {
     const array = value.flat(Infinity);
-    if (isArrayLike(current)) {
+    if (Array.isArray(current)) {
       return reconcile(parent, array, current);
     } else if (current instanceof Node) {
       return reconcile(parent, array, [current]);
@@ -231,7 +216,7 @@ export function patch(parent, value, current) {
       throw new Error("Not possible");
     }
   } else if (value instanceof Node) {
-    if (isArrayLike(current)) {
+    if (Array.isArray(current)) {
       reconcile(parent, [value], current);
     } else if (current instanceof Node) {
       parent.replaceChild(value, current);
@@ -258,8 +243,8 @@ export function patch(parent, value, current) {
 export function create(data) {
   if (data instanceof Node) {
     return data;
-  } else if (isArrayLike(data)) {
-    return document.createComment("[]");
+  } else if (Array.isArray(data)) {
+    return data.map(create);
   } else if (typeof data === "object") {
     const { tag = "div", ...props } = data;
     const element = document.createElement(tag);
@@ -274,10 +259,6 @@ export function create(data) {
   } else {
     return document.createComment(data);
   }
-}
-
-function isArrayLike(object) {
-  return Array.isArray(object) || object instanceof NodeList;
 }
 
 export function serialize(data) {
