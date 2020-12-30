@@ -303,8 +303,8 @@ S.root(() => {
           {
             tag: "input",
             type: "checkbox",
-            onInput: todo.done,
-            value: todo.done,
+            onInput: (event) => void todo.done(!todo.done()),
+            checked: todo.done,
           },
           {
             tag: "input",

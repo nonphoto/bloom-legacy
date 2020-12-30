@@ -61,6 +61,8 @@
           inputText("");
         };
 
+        S(() => console.log(todos().map((todo) => todo.done())));
+
         const Main = {
           tag: "main",
           children: [
@@ -76,28 +78,29 @@
                 { tag: "button", onClick: addTodo, children: "Add" },
               ],
             },
-            todos.map((todo) => ({
-              children: [
-                {
-                  tag: "input",
-                  type: "checkbox",
-                  onInput: todo.done,
-                  value: todo.done,
-                },
-                {
-                  tag: "input",
-                  type: "text",
-                  onInput: (event) => void todo.title(event.target.value),
-                  value: todo.title,
-                },
-                {
-                  tag: "button",
-                  oninsert: () => console.log("insert", todo.title()),
-                  onClick: () => todos.remove(todo),
-                  children: "Remove",
-                },
-              ],
-            })),
+            todos.map((todo) => {
+              return {
+                children: [
+                  {
+                    tag: "input",
+                    type: "checkbox",
+                    onInput: (event) => void todo.done(!todo.done()),
+                    checked: todo.done,
+                  },
+                  {
+                    tag: "input",
+                    type: "text",
+                    onInput: (event) => void todo.title(event.target.value),
+                    value: todo.title,
+                  },
+                  {
+                    tag: "button",
+                    onClick: () => todos.remove(todo),
+                    children: "Remove",
+                  },
+                ],
+              };
+            }),
           ],
         };
 
