@@ -22,15 +22,18 @@
         padding: 0;
         list-style: none;
         display: grid;
-        padding: 2rem;
-        grid-gap: 2rem;
+        padding: 1rem;
+        grid-gap: 1rem;
         grid-template-columns: 4fr 3fr 2fr 1fr;
         grid-template-rows: 4fr 3fr 2fr 1fr;
         min-height: 100vh;
         user-select: none;
+        overflow: hidden;
       }
 
-      li {
+      .box {
+        width: 100%;
+        height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -44,22 +47,67 @@
       import { time } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
       import SArray from "https://cdn.skypack.dev/s-array";
+      import { mixArray } from "https://cdn.skypack.dev/@popmotion/popcorn";
 
       const range = (n) => [...Array(n).keys()];
       const shuffle = (a) => a.sort(() => Math.random() - 0.5);
-      const items = SArray(
-        range(16).map((index) => ({ index, ref: S.data() }))
-      );
 
       S.root(() => {
+        const areSpringsActive = S.data(false);
+        const items = SArray(
+          range(16).map((index) => {
+            const targetBounds = S.data([0, 0, 0, 0]);
+            const bounds = S.on(
+              time,
+              (b) => {
+                if (areSpringsActive()) {
+                  return mixArray(b, targetBounds())(0.1);
+                } else {
+                  return targetBounds();
+                }
+              },
+              targetBounds()
+            );
+            return {
+              index,
+              ref: S.data(),
+              bounds,
+              targetBounds,
+            };
+          })
+        );
+
         const Main = {
           tag: "ul",
           onClick: () => items(shuffle(items())),
-          children: items.map(({ index, ref }) => {
+          children: items.map(({ index, ref, targetBounds, bounds }) => {
+            const transform = S(() => {
+              const [x1, y1, sx1, sy1] = bounds();
+              const [x2, y2, sx2, sy2] = targetBounds();
+              return `translate(${x1 - x2}px, ${y1 - y2}px) scale(${
+                sx1 / sx2
+              }, ${sy1 / sy2})`;
+            });
             return {
               tag: "li",
-              oninsert: () => console.log("insert", index),
-              children: index,
+              ref: (node) => {
+                if (node) {
+                  const { x, y, width, height } = node.getBoundingClientRect();
+                  targetBounds([x, y, width, height]);
+                }
+              },
+              onConnect: (node) => {
+                const { x, y, width, height } = node.getBoundingClientRect();
+                targetBounds([x, y, width, height]);
+                requestAnimationFrame(() => {
+                  areSpringsActive(true);
+                });
+              },
+              children: {
+                classList: "box",
+                style: { transform },
+                children: index,
+              },
             };
           }),
         };

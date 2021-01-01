@@ -34,6 +34,42 @@ const namespaces = {
 
 const propMap = new WeakMap();
 
+function* walkTree(root) {
+  const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+  let currentNode = treeWalker.currentNode;
+  while (currentNode) {
+    yield currentNode;
+    currentNode = treeWalker.nextNode();
+  }
+}
+
+const mutationObserver = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    for (const root of mutation.removedNodes) {
+      if (root.nodeType === Node.ELEMENT_NODE) {
+        for (const node of walkTree(root)) {
+          const props = propMap.get(node);
+          if (props && typeof props.onDisconnect === "function") {
+            props.onDisconnect(node);
+          }
+        }
+      }
+    }
+    for (const root of mutation.addedNodes) {
+      if (root.nodeType === Node.ELEMENT_NODE) {
+        for (const node of walkTree(root)) {
+          const props = propMap.get(node);
+          if (props && typeof props.onConnect === "function") {
+            props.onConnect(node);
+          }
+        }
+      }
+    }
+  }
+});
+
+mutationObserver.observe(document.body, { subtree: true, childList: true });
+
 export function setAttribute(node, name, value) {
   if (typeof value === "function") {
     S(() => setAttribute(node, name, value()));
@@ -80,14 +116,14 @@ export function setStyle(node, key, value) {
   }
 }
 
-export function update(node, props) {
+export function set(node, props) {
   const currentProps = propMap.has(node) ? propMap.get(node) : {};
-  const allKeys = [...Object.keys(currentProps), ...Object.keys(props)];
+  const allKeys = Object.keys({ ...currentProps, ...props });
   let key, value, current;
   for (key of allKeys) {
     value = props[key];
     current = currentProps[key];
-    if (key === "tag") {
+    if (["tag", "onConnect", "onDisconnect"].includes(key)) {
       continue;
     }
     if (key === "children") {
@@ -98,7 +134,7 @@ export function update(node, props) {
         value ||= {};
         const allStyleKeys = [...Object.keys(current), ...Object.keys(value)];
         for (const styleKey of allStyleKeys) {
-          setStyle(node, styleKey, value[styleKey], current[styleKey]);
+          setStyle(node, styleKey, value[styleKey]);
         }
       } else {
         setAttribute(node, key, value);
@@ -109,9 +145,6 @@ export function update(node, props) {
       value(node);
     } else if (key.startsWith("on")) {
       const eventKey = key.slice(2).toLowerCase();
-      if (["insert", "remove"].includes(key)) {
-        continue;
-      }
       if (current) {
         node.removeEventListener(eventKey, current);
       }
@@ -140,7 +173,8 @@ export function reconcile(parent, array, current) {
     array = [document.createComment("[]")];
   }
   for (let i = current.length; i > array.length; i--) {
-    parent.removeChild(current[i - 1]);
+    const node = current[i - 1];
+    parent.removeChild(node);
   }
   let head = current[0];
   let result = [];
@@ -230,7 +264,7 @@ export function patch(parent, value, current) {
       current instanceof Element &&
       tag.toLowerCase() === current.tagName.toLowerCase()
     ) {
-      update(current, value);
+      set(current, value);
       return current;
     } else {
       return patch(parent, create(value), current);
@@ -248,14 +282,12 @@ export function create(data) {
   } else if (typeof data === "object") {
     const { tag = "div", ...props } = data;
     const element = document.createElement(tag);
-    update(element, props);
+    set(element, props);
     return element;
   } else if (typeof data === "string") {
     return document.createTextNode(data);
   } else if (typeof data === "number") {
     return document.createTextNode(data.toString());
-  } else if (typeof data === "function") {
-    return S(() => create(data()));
   } else {
     return document.createComment(data);
   }
