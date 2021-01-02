@@ -89,15 +89,6 @@
                     ],
                     options
                   );
-                  if (child().firstElementChild) {
-                    child().firstElementChild.animate(
-                      [
-                        { transform: `scale(${1 / sx}, ${1 / sy})` },
-                        { transform: `scale(1)` },
-                      ],
-                      options
-                    );
-                  }
                   return next;
                 } else {
                   return prev;
@@ -113,9 +104,7 @@
                 ref: child,
                 style: { transformOrigin: "top left" },
                 classList: "box",
-                children: {
-                  children: index,
-                },
+                children: index,
               },
             };
           }),
