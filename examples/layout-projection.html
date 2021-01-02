@@ -47,32 +47,21 @@
       import { time } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
       import SArray from "https://cdn.skypack.dev/s-array";
-      import { mixArray } from "https://cdn.skypack.dev/@popmotion/popcorn";
 
       const range = (n) => [...Array(n).keys()];
       const shuffle = (a) => a.sort(() => Math.random() - 0.5);
+
+      const options = {
+        duration: 500,
+        easing: "cubic-bezier(0.33, 1, 0.68, 1)",
+      };
 
       S.root(() => {
         const areSpringsActive = S.data(false);
         const items = SArray(
           range(16).map((index) => {
-            const targetBounds = S.data([0, 0, 0, 0]);
-            const bounds = S.on(
-              time,
-              (b) => {
-                if (areSpringsActive()) {
-                  return mixArray(b, targetBounds())(0.1);
-                } else {
-                  return targetBounds();
-                }
-              },
-              targetBounds()
-            );
             return {
               index,
-              ref: S.data(),
-              bounds,
-              targetBounds,
             };
           })
         );
@@ -80,33 +69,53 @@
         const Main = {
           tag: "ul",
           onClick: () => items(shuffle(items())),
-          children: items.map(({ index, ref, targetBounds, bounds }) => {
-            const transform = S(() => {
-              const [x1, y1, sx1, sy1] = bounds();
-              const [x2, y2, sx2, sy2] = targetBounds();
-              return `translate(${x1 - x2}px, ${y1 - y2}px) scale(${
-                sx1 / sx2
-              }, ${sy1 / sy2})`;
-            });
-            return {
-              tag: "li",
-              ref: (node) => {
-                if (node) {
-                  const { x, y, width, height } = node.getBoundingClientRect();
-                  targetBounds([x, y, width, height]);
+          children: items.map(({ index }) => {
+            const parent = S.data();
+            const child = S.data();
+            S(
+              (prev) => {
+                if (parent() && child()) {
+                  const next = parent().getBoundingClientRect();
+                  const x = prev.x - next.x;
+                  const y = prev.y - next.y;
+                  const sx = prev.width / Math.max(next.width, 1);
+                  const sy = prev.height / Math.max(next.height, 1);
+                  child().animate(
+                    [
+                      {
+                        transform: `translate(${x}px, ${y}px) scale(${sx}, ${sy})`,
+                      },
+                      { transform: `translate(0px, 0px) scale(1)` },
+                    ],
+                    options
+                  );
+                  if (child().firstElementChild) {
+                    child().firstElementChild.animate(
+                      [
+                        { transform: `scale(${1 / sx}, ${1 / sy})` },
+                        { transform: `scale(1)` },
+                      ],
+                      options
+                    );
+                  }
+                  return next;
+                } else {
+                  return prev;
                 }
               },
-              onConnect: (node) => {
-                const { x, y, width, height } = node.getBoundingClientRect();
-                targetBounds([x, y, width, height]);
-                requestAnimationFrame(() => {
-                  areSpringsActive(true);
-                });
-              },
+              { x: 0, y: 0, width: 1, height: 1 }
+            );
+            return {
+              tag: "li",
+              ref: (node) => requestAnimationFrame(() => parent(node)),
+              onConnect: parent,
               children: {
+                ref: child,
+                style: { transformOrigin: "top left" },
                 classList: "box",
-                style: { transform },
-                children: index,
+                children: {
+                  children: index,
+                },
               },
             };
           }),
