@@ -40,12 +40,12 @@
     </style>
     <script type="module">
       import { patch } from "../index.js";
-      import { time } from "../utils.js";
+      import { clientRect, resizeEvent } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
       import SArray from "https://cdn.skypack.dev/s-array";
 
       S.root(() => {
-        const bounds = S.data({ top: 0, left: 0 });
+        const bounds = S.data();
         const isVisible = S.data(true);
         const Main = [
           {
@@ -63,16 +63,24 @@
                 onInput: () => void isVisible(!isVisible()),
                 checked: isVisible,
               },
-              S(() => [
-                { children: "top" },
-                { children: Math.floor(bounds().top) },
-                { children: "left" },
-                { children: Math.floor(bounds().left) },
-                { children: "width" },
-                { children: Math.floor(bounds().width) },
-                { children: "height" },
-                { children: Math.floor(bounds().height) },
-              ]),
+              S(() => {
+                const { top, left, width, height } = bounds() || {
+                  top: 0,
+                  left: 0,
+                  width: 0,
+                  height: 0,
+                };
+                return [
+                  { children: "top" },
+                  { children: Math.floor(top) },
+                  { children: "left" },
+                  { children: Math.floor(left) },
+                  { children: "width" },
+                  { children: Math.floor(width) },
+                  { children: "height" },
+                  { children: Math.floor(height) },
+                ];
+              }),
             ],
           },
           {
@@ -96,19 +104,8 @@
                   children: S(() => {
                     if (isVisible()) {
                       const ref = S.data();
-                      S(() => {
-                        if (ref()) {
-                          const handler = () => {
-                            bounds(ref().getBoundingClientRect());
-                          };
-                          window.addEventListener("scroll", handler, true);
-                          window.addEventListener("resize", handler, true);
-                          S.cleanup(() => {
-                            window.removeEventListener("scroll", handler, true);
-                            window.removeEventListener("resize", handler, true);
-                          });
-                        }
-                      });
+                      const localBounds = clientRect(ref);
+                      S(() => bounds(localBounds()));
 
                       return {
                         ref,
