@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      .grid {
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-column-gap: 1rem;
+      }
+
+      .outer {
+        overflow: auto;
+        border-radius: 1rem;
+      }
+
+      body,
+      .inner {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+    <script type="module">
+      import { patch } from "../index.js";
+      import { time } from "../utils.js";
+      import S from "https://cdn.skypack.dev/s-js";
+      import SArray from "https://cdn.skypack.dev/s-array";
+
+      S.root(() => {
+        const bounds = S.data({ top: 0, left: 0 });
+        const isVisible = S.data(true);
+        const Main = [
+          {
+            classList: "grid",
+            children: [
+              {
+                tag: "label",
+                children: "Visible",
+                for: "checkbox",
+              },
+              {
+                tag: "input",
+                type: "checkbox",
+                id: "checkbox",
+                onInput: () => void isVisible(!isVisible()),
+                checked: isVisible,
+              },
+              S(() => [
+                { children: "top" },
+                { children: Math.floor(bounds().top) },
+                { children: "left" },
+                { children: Math.floor(bounds().left) },
+                { children: "width" },
+                { children: Math.floor(bounds().width) },
+                { children: "height" },
+                { children: Math.floor(bounds().height) },
+              ]),
+            ],
+          },
+          {
+            classList: "outer",
+            style: {
+              background: "#eef",
+              width: "60vw",
+              height: "60vh",
+            },
+            children: {
+              classList: "inner",
+              children: {
+                classList: "outer",
+                style: {
+                  background: "#dde",
+                  width: "55vw",
+                  height: "55vh",
+                },
+                children: {
+                  classList: "inner",
+                  children: S(() => {
+                    if (isVisible()) {
+                      const ref = S.data();
+                      S(() => {
+                        if (ref()) {
+                          const handler = () => {
+                            bounds(ref().getBoundingClientRect());
+                          };
+                          window.addEventListener("scroll", handler, true);
+                          window.addEventListener("resize", handler, true);
+                          S.cleanup(() => {
+                            window.removeEventListener("scroll", handler, true);
+                            window.removeEventListener("resize", handler, true);
+                          });
+                        }
+                      });
+
+                      return {
+                        ref,
+                        style: {
+                          borderRadius: "1rem",
+                          background: "red",
+                          width: "50vw",
+                          height: "50vh",
+                        },
+                      };
+                    }
+                  }),
+                },
+              },
+            },
+          },
+        ];
+
+        patch(document.body, Main);
+      });
+    </script>
+  </head>
+  <body></body>
+</html>
