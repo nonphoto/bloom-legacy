@@ -32,44 +32,6 @@ const namespaces = {
   xml: "http://www.w3.org/XML/1998/namespace",
 };
 
-const propMap = new WeakMap();
-
-function* walkTree(root) {
-  const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-  let currentNode = treeWalker.currentNode;
-  while (currentNode) {
-    yield currentNode;
-    currentNode = treeWalker.nextNode();
-  }
-}
-
-const mutationObserver = new MutationObserver((mutations) => {
-  for (const mutation of mutations) {
-    for (const root of mutation.removedNodes) {
-      if (root.nodeType === Node.ELEMENT_NODE) {
-        for (const node of walkTree(root)) {
-          const props = propMap.get(node);
-          if (props && typeof props.onDisconnect === "function") {
-            props.onDisconnect(node);
-          }
-        }
-      }
-    }
-    for (const root of mutation.addedNodes) {
-      if (root.nodeType === Node.ELEMENT_NODE) {
-        for (const node of walkTree(root)) {
-          const props = propMap.get(node);
-          if (props && typeof props.onConnect === "function") {
-            props.onConnect(node);
-          }
-        }
-      }
-    }
-  }
-});
-
-mutationObserver.observe(document.body, { subtree: true, childList: true });
-
 export function setAttribute(node, name, value) {
   if (typeof value === "function") {
     S(() => setAttribute(node, name, value()));
@@ -117,23 +79,17 @@ export function setStyle(node, key, value) {
 }
 
 export function set(node, props) {
-  const currentProps = propMap.has(node) ? propMap.get(node) : {};
-  const allKeys = Object.keys({ ...currentProps, ...props });
   let key, value, current;
-  for (key of allKeys) {
+  for (key in props) {
     value = props[key];
-    current = currentProps[key];
-    if (["tag", "onConnect", "onDisconnect"].includes(key)) {
+    if (["tag"].includes(key)) {
       continue;
     }
     if (key === "children") {
       patch(node, value, node.childNodes);
     } else if (key === "style") {
       if (typeof value === "object") {
-        current ||= {};
-        value ||= {};
-        const allStyleKeys = [...Object.keys(current), ...Object.keys(value)];
-        for (const styleKey of allStyleKeys) {
+        for (let styleKey in value) {
           setStyle(node, styleKey, value[styleKey]);
         }
       } else {
@@ -145,12 +101,12 @@ export function set(node, props) {
       value(node);
     } else if (key.startsWith("on")) {
       const eventKey = key.slice(2).toLowerCase();
-      if (current) {
-        node.removeEventListener(eventKey, current);
-      }
-      if (value) {
+      S(() => {
         node.addEventListener(eventKey, value);
-      }
+        S.cleanup(() => {
+          node.removeEventListener(eventKey, current);
+        });
+      });
     } else if (key.includes(":")) {
       const namespace = namespaces[key.split(":")[0]];
       if (namespace) {
@@ -164,7 +120,6 @@ export function set(node, props) {
       setAttribute(node, key, value);
     }
   }
-  propMap.set(node, props);
   return node;
 }
 
