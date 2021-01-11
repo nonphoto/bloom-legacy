@@ -1,6 +1,4 @@
 import S from "https://cdn.skypack.dev/s-js";
-import lodashThrottle from "https://cdn.skypack.dev/lodash-es/throttle";
-import lodashDebounce from "https://cdn.skypack.dev/lodash-es/debounce";
 import sync, { cancelSync } from "https://cdn.skypack.dev/framesync";
 
 export function animationEvent(type) {
@@ -36,14 +34,18 @@ export const mousePosition = S(() => {
   return [clientX, clientY];
 });
 
-export const windowResize = domEvent(window, "resize", { passive: true });
+export const windowResize = throttleByAnimationFrame(
+  domEvent(window, "resize", { passive: true })
+);
 
 export const windowSize = S.on(windowResize, () => [
   window.innerWidth,
   window.innerHeight,
 ]);
 
-export const windowScroll = domEvent(window, "scroll", { passive: true });
+export const windowScroll = throttleByAnimationFrame(
+  domEvent(window, "scroll", { passive: true, capture: true })
+);
 
 export const windowOffset = S.on(windowScroll, () => [
   window.pageXOffset,
@@ -56,15 +58,11 @@ export function memo(fn, ...comparator) {
   return value;
 }
 
-export function throttle(fn, ...options) {
+export function throttleByAnimationFrame(fn) {
   const value = S.value(S.sample(fn));
-  S.on(fn, lodashThrottle(value, ...options));
-  return value;
-}
-
-export function debounce(fn, ...options) {
-  const value = S.value(S.sample(fn));
-  S.on(fn, lodashDebounce(value, ...options));
+  S.on(animationRead, () => {
+    value(fn());
+  });
   return value;
 }
 
@@ -90,18 +88,8 @@ export const clientRect = (ref) => {
       S.cleanup(() => {
         observer.disconnect();
       });
-      S.on(
-        domEvent(window, "resize", { passive: true }),
-        handler,
-        undefined,
-        true
-      );
-      S.on(
-        domEvent(window, "scroll", { passive: true, capture: true }),
-        handler,
-        undefined,
-        true
-      );
+      S.on(windowScroll, handler, undefined, true);
+      S.on(windowResize, handler, undefined, true);
     }
   });
   return bounds;
