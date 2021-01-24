@@ -79,9 +79,8 @@ export function setStyle(node, key, value) {
 }
 
 export function set(node, props) {
-  let key, value, current;
-  for (key in props) {
-    value = props[key];
+  for (const key in props) {
+    const value = props[key];
     if (["tag"].includes(key)) {
       continue;
     }
@@ -101,11 +100,9 @@ export function set(node, props) {
       value(node);
     } else if (key.startsWith("on")) {
       const eventKey = key.slice(2).toLowerCase();
-      S(() => {
-        node.addEventListener(eventKey, value);
-        S.cleanup(() => {
-          node.removeEventListener(eventKey, current);
-        });
+      node.addEventListener(eventKey, value);
+      S.cleanup(() => {
+        node.removeEventListener(eventKey, value);
       });
     } else if (key.includes(":")) {
       const namespace = namespaces[key.split(":")[0]];
