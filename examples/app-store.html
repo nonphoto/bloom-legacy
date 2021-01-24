@@ -36,6 +36,11 @@
     <script type="module">
       import { patch, create } from "../index.js";
       import S from "https://cdn.skypack.dev/s-js";
+      import { animate, mix } from "https://cdn.skypack.dev/popmotion";
+      import {
+        layoutNode,
+        updateProjectionStyle,
+      } from "https://cdn.skypack.dev/@popmotion/projection";
 
       const fitRect = (rect, target) => {
         var sw = target[2] / rect[2];
@@ -111,9 +116,10 @@
 
       const Item = ({ title, body, subtitle, image, isActive }) => {
         return {
-          children: S(() =>
-            isActive()
-              ? {
+          children: [
+            S(
+              () =>
+                isActive() && {
                   onClick: () => void isActive(false),
                   style: {
                     zIndex: 1,
@@ -123,16 +129,16 @@
                   },
                   children: [{ tag: "img", src: image.src }],
                 }
-              : {
-                  onClick: () => void isActive(true),
-                  style: { position: "relative" },
-                  children: [
-                    { tag: "img", src: image.src },
-                    { tag: "h1", children: title },
-                    { tag: "h2", children: subtitle },
-                  ],
-                }
-          ),
+            ),
+            {
+              onClick: () => void isActive(true),
+              children: [
+                { tag: "img", src: image.src },
+                { tag: "h1", children: title },
+                { tag: "h2", children: subtitle },
+              ],
+            },
+          ],
         };
       };
 
