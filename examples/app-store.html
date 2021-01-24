@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html {
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+          sans-serif;
+        font-size: 20px;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+      h1 {
+        letter-spacing: -0.03ch;
+      }
+      h2 {
+        font-size: 1rem;
+        font-weight: 500;
+      }
+      p {
+        color: #666;
+      }
+      img {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { patch, create } from "../index.js";
+      import S from "https://cdn.skypack.dev/s-js";
+
+      const fitRect = (rect, target) => {
+        var sw = target[2] / rect[2];
+        var sh = target[3] / rect[3];
+        var scale = (sw + sh) / 2;
+
+        return [
+          target[0] + (target[2] - rect[2] * scale) / 2,
+          target[1] + (target[3] - rect[3] * scale) / 2,
+          rect[2] * scale,
+          rect[3] * scale,
+        ];
+      };
+
+      const data = [
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1509957660513-3cfee07defec?w=1000&q=80",
+            aspectRatio: 406 / 640,
+          },
+          title: "Alpha",
+          subtitle: "Partiendo scriptorem labitur has dissentiunt",
+          body:
+            "Id primis accusam eu eos id vel odio soluta purto persecuti ea eu melius noluisse eos. Ea ad accusam recteque ubique efficiendi tamquam iuvaret sit eam consequat fabellas nostrud quo.",
+        },
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1497377701144-65a4a020f4c9?w=1000&q=80",
+            aspectRatio: 733 / 640,
+          },
+          title: "Bravo",
+          subtitle: "Ad accusam doming pro an",
+          body:
+            "Aliquando an eos placerat verterem minim id blandit in no an qui contentiones labores et. Est an prodesset volumus alienum at eos stet maluisset democritum mediocritatem cu nemore.",
+        },
+
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1531523499679-7416e782dd96?w=1000&q=80",
+            aspectRatio: 479 / 640,
+          },
+          title: "Charlie",
+          subtitle: "Concludaturque agam impedit omnium",
+          body:
+            "Erant tincidunt lobortis et ex concludaturque agam impedit omnium vivendo melius dissentiunt legendos mentitum numquam an. Vel an invidunt phaedrum accusamus ei dolor vim decore summo et eam no.",
+        },
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1535629097462-c777c5b466a1?w=1000&q=80",
+            aspectRatio: 1139 / 640,
+          },
+          title: "Delta",
+          subtitle: "Lorem assueverit commodo nec his",
+          body:
+            "Eum mei alia qui mel volumus usu vero liber reprehendunt an ea efficiendi dicant. Et vel ex pri explicari possim pri habeo pro ea soleat appellantur modo mel ex.",
+        },
+        {
+          image: {
+            src:
+              "https://images.unsplash.com/photo-1506170206-a6920d212828?w=1000&q=80",
+            aspectRatio: 360 / 640,
+          },
+          title: "Echo",
+          subtitle: "Eum consequat malorum dolor ad",
+          body:
+            "Salutatus adipiscing pri et nihil elitr deleniti oratio scribentur molestiae ocurreret id verear esse nec omnes salutandi. Case per iudico urbanitas vel accommodare oporteat quo audiam te vis impetus gubergren ut.",
+        },
+      ];
+
+      const Item = ({ title, body, subtitle, image, isActive }) => {
+        return {
+          children: S(() =>
+            isActive()
+              ? {
+                  onClick: () => void isActive(false),
+                  style: {
+                    zIndex: 1,
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                  },
+                  children: [{ tag: "img", src: image.src }],
+                }
+              : {
+                  onClick: () => void isActive(true),
+                  style: { position: "relative" },
+                  children: [
+                    { tag: "img", src: image.src },
+                    { tag: "h1", children: title },
+                    { tag: "h2", children: subtitle },
+                    { tag: "p", children: body },
+                  ],
+                }
+          ),
+        };
+      };
+
+      S.root(() => {
+        const items = data.map((datum) => ({
+          ...datum,
+          isActive: S.value(false),
+        }));
+        for (let item of items) {
+          S(() => {
+            if (item.isActive()) {
+              for (let other of items) {
+                if (other !== item) {
+                  other.isActive(false);
+                }
+              }
+            }
+          });
+        }
+        const Main = {
+          style: {
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(15rem, 1fr))",
+            padding: "2rem",
+            gridGap: "2rem",
+          },
+          children: items.map((item) => Item({ ...item })),
+        };
+
+        patch(document.body, Main);
+      });
+    </script>
+  </body>
+</html>
