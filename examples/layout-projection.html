@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html {
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+          sans-serif;
+        font-size: 20px;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #parent {
+        background-color: #dde;
+        width: 100px;
+        height: 100px;
+      }
+      #child {
+        background-color: #aab;
+        width: 50px;
+        height: 50px;
+        position: relative;
+        top: 10px;
+        left: 10px;
+      }
+      #parent[data-layout="true"] {
+        width: 200px;
+        height: 200px;
+        position: relative;
+        top: 100px;
+        left: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { patch, create } from "../index.js";
+      import S from "https://cdn.skypack.dev/s-js";
+      import { animate, mix } from "https://cdn.skypack.dev/popmotion";
+      import {
+        layoutNode,
+        updateProjectionStyle,
+      } from "https://cdn.skypack.dev/projection@2.0.0-alpha.3";
+
+      function mixBox(prev, next, p) {
+        return {
+          top: mix(prev.top, next.top, p),
+          left: mix(prev.left, next.left, p),
+          right: mix(prev.right, next.right, p),
+          bottom: mix(prev.bottom, next.bottom, p),
+        };
+      }
+
+      S.root(() => {
+        const toggle = S.data();
+        const postToggle = S.data();
+        const parent = S.data();
+        const parentLayout = S.on(parent, () => {
+          if (parent()) {
+            const parentLayout = layoutNode({
+              onProjectionUpdate: () =>
+                updateProjectionStyle(parent(), parentLayout),
+            });
+            S.cleanup(() => {
+              parentLayout.destroy();
+            });
+            return parentLayout;
+          }
+        });
+        const prevBounds = S.on(
+          toggle,
+          () => {
+            const prevBounds = parent().getBoundingClientRect();
+            postToggle(toggle());
+            return prevBounds;
+          },
+          undefined,
+          true
+        );
+
+        const Main = {
+          ref: parent,
+          id: "parent",
+          "data-layout": S(() => postToggle()),
+          onClick: () => toggle(!S.sample(toggle)),
+          children: {
+            id: "child",
+          },
+        };
+
+        S.on(
+          postToggle,
+          () => {
+            parent().style.transform = child.style.transform = "";
+            const bounds = parent().getBoundingClientRect();
+            parentLayout().setLayout(bounds);
+            parentLayout().setTarget(prevBounds);
+            console.log("animate", prevBounds(), bounds);
+            animate({
+              from: 0,
+              to: 1,
+              stiffness: 100,
+              damping: 10,
+              restDelta: 0.001,
+              onUpdate: (p) => {
+                parentLayout().setTarget(mixBox(prevBounds(), bounds, p));
+              },
+            });
+          },
+          undefined,
+          true
+        );
+
+        patch(document.body, Main);
+      });
+    </script>
+  </body>
+</html>
