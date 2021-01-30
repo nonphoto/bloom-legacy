@@ -53,32 +53,63 @@
         };
       }
 
-      S.root(() => {
-        const toggle = S.data();
-        const postToggle = S.data();
-        const parent = S.data();
-        const parentLayout = S.on(parent, () => {
-          if (parent()) {
-            const parentLayout = layoutNode({
-              onProjectionUpdate: () =>
-                updateProjectionStyle(parent(), parentLayout),
-            });
+      const Animated = ({ parent, children, trigger }) => {
+        const element = S.data();
+        const elementLayout = S(() => {
+          if (element()) {
+            const elementLayout = layoutNode(
+              {
+                onProjectionUpdate: () =>
+                  updateProjectionStyle(element(), elementLayout),
+              },
+              parent()
+            );
             S.cleanup(() => {
-              parentLayout.destroy();
+              elementLayout.destroy();
             });
-            return parentLayout;
+            return elementLayout;
           }
         });
         const prevBounds = S.on(
-          toggle,
+          trigger,
           () => {
-            const prevBounds = parent().getBoundingClientRect();
-            postToggle(toggle());
+            const prevBounds = element().getBoundingClientRect();
             return prevBounds;
           },
           undefined,
           true
         );
+        const rendered = S(() => ({
+          ref: element,
+          children: children(parent),
+        }));
+        S.on(
+          trigger,
+          () => {
+            element().style.transform = "";
+            const bounds = element().getBoundingClientRect();
+            elementLayout().setLayout(bounds);
+            elementLayout().setTarget(prevBounds);
+            animate({
+              from: 0,
+              to: 1,
+              stiffness: 100,
+              damping: 10,
+              restDelta: 0.001,
+              onUpdate: (p) => {
+                elementLayout().setTarget(mixBox(prevBounds(), bounds, p));
+              },
+            });
+          },
+          undefined,
+          true
+        );
+        return rendered;
+      };
+
+      S.root(() => {
+        const toggle = S.data();
+        const postToggle = S.data();
 
         const Main = {
           ref: parent,
@@ -89,29 +120,6 @@
             id: "child",
           },
         };
-
-        S.on(
-          postToggle,
-          () => {
-            parent().style.transform = child.style.transform = "";
-            const bounds = parent().getBoundingClientRect();
-            parentLayout().setLayout(bounds);
-            parentLayout().setTarget(prevBounds);
-            console.log("animate", prevBounds(), bounds);
-            animate({
-              from: 0,
-              to: 1,
-              stiffness: 100,
-              damping: 10,
-              restDelta: 0.001,
-              onUpdate: (p) => {
-                parentLayout().setTarget(mixBox(prevBounds(), bounds, p));
-              },
-            });
-          },
-          undefined,
-          true
-        );
 
         patch(document.body, Main);
       });
