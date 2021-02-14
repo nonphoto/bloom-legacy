@@ -36,15 +36,17 @@
   </head>
   <body>
     <script type="module">
-      import { patch, create } from "../index.js";
+      import { patch } from "../index.js";
+      import { after } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
       import { animate, mix } from "https://cdn.skypack.dev/popmotion";
       import {
         layoutNode,
         updateProjectionStyle,
       } from "https://cdn.skypack.dev/projection@2.0.0-alpha.3";
+      import sync, { cancelSync } from "https://cdn.skypack.dev/framesync";
 
-      function mixBox(prev, next, p) {
+      function mixRect(prev, next, p) {
         return {
           top: mix(prev.top, next.top, p),
           left: mix(prev.left, next.left, p),
@@ -53,73 +55,108 @@
         };
       }
 
-      const Animated = ({ parent, children, trigger }) => {
+      function pixelsToPercent(pixels, axis) {
+        return (pixels / (axis.max - axis.min)) * 100;
+      }
+
+      function correctBorderRadius(latest, node) {
+        if (typeof latest === "string") {
+          if (latest.endsWith("px")) {
+            latest = parseFloat(latest);
+          } else {
+            return latest;
+          }
+        }
+        const { x, y } = node.getTarget();
+        return `${pixelsToPercent(latest, x)}% ${pixelsToPercent(latest, y)}%`;
+      }
+
+      function animateRect(stream, options = {}) {
+        const result = S.data(S.sample(stream));
+        S((prev) => {
+          animate({
+            ...options,
+            from: 0,
+            to: 1,
+            onUpdate: (p) => void result(mixRect(prev, stream(), p)),
+          });
+          return stream();
+        }, S.sample(stream));
+        return result;
+      }
+
+      const Projected = ({
+        rect,
+        parent,
+        children,
+        borderRadius,
+        ...other
+      }) => {
         const element = S.data();
-        const elementLayout = S(() => {
+        const projection = S(() => {
           if (element()) {
-            const elementLayout = layoutNode(
+            const projection = layoutNode(
               {
                 onProjectionUpdate: () =>
-                  updateProjectionStyle(element(), elementLayout),
+                  updateProjectionStyle(element(), projection),
               },
-              parent()
+              typeof parent === "function" ? parent() : undefined
             );
+            projection.setLayout(element().getBoundingClientRect());
             S.cleanup(() => {
-              elementLayout.destroy();
+              projection.destroy();
             });
-            return elementLayout;
+            return projection;
           }
         });
-        const prevBounds = S.on(
-          trigger,
-          () => {
-            const prevBounds = element().getBoundingClientRect();
-            return prevBounds;
-          },
-          undefined,
-          true
-        );
-        const rendered = S(() => ({
+        S(() => {
+          if (projection() && rect) {
+            projection().setTarget(rect());
+            element().style.borderRadius = correctBorderRadius(
+              borderRadius,
+              projection()
+            );
+          }
+        });
+        return {
+          ...other,
           ref: element,
-          children: children(parent),
-        }));
-        S.on(
-          trigger,
-          () => {
-            element().style.transform = "";
-            const bounds = element().getBoundingClientRect();
-            elementLayout().setLayout(bounds);
-            elementLayout().setTarget(prevBounds);
-            animate({
-              from: 0,
-              to: 1,
-              stiffness: 100,
-              damping: 10,
-              restDelta: 0.001,
-              onUpdate: (p) => {
-                elementLayout().setTarget(mixBox(prevBounds(), bounds, p));
-              },
-            });
-          },
-          undefined,
-          true
-        );
-        return rendered;
+          children:
+            typeof children === "function" ? children(projection) : children,
+        };
       };
 
       S.root(() => {
         const toggle = S.data();
-        const postToggle = S.data();
+        const parentRect = animateRect(
+          S(() =>
+            toggle()
+              ? { top: 0, left: 0, bottom: 300, right: 300 }
+              : { top: 200, left: 200, bottom: 300, right: 300 }
+          )
+        );
 
-        const Main = {
-          ref: parent,
+        const childRect = animateRect(
+          S(() =>
+            toggle()
+              ? { top: 0, left: 0, bottom: 100, right: 100 }
+              : { top: 100, left: 100, bottom: 200, right: 200 }
+          )
+        );
+
+        const Main = Projected({
           id: "parent",
-          "data-layout": S(() => postToggle()),
+          rect: parentRect,
+          borderRadius: 16,
           onClick: () => toggle(!S.sample(toggle)),
-          children: {
-            id: "child",
-          },
-        };
+          children: (parent) =>
+            Projected({
+              parent,
+              borderRadius: 16,
+              rect: childRect,
+              id: "child",
+            }),
+        });
 
         patch(document.body, Main);
       });

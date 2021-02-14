@@ -211,37 +211,21 @@ export function patch(parent, value, current) {
     }
     return value;
   } else if (valueType === "object") {
-    const tag = value.tag || "div";
+    const { tag = "div", ...props } = value;
     if (
       current instanceof Element &&
       tag.toLowerCase() === current.tagName.toLowerCase()
     ) {
-      set(current, value);
+      set(current, props);
       return current;
     } else {
-      return patch(parent, create(value), current);
+      const element = document.createElement(tag);
+      const result = patch(parent, element, current);
+      set(element, props);
+      return result;
     }
   } else {
     return current;
-  }
-}
-
-export function create(data) {
-  if (data instanceof Node) {
-    return data;
-  } else if (Array.isArray(data)) {
-    return data.map(create);
-  } else if (typeof data === "object") {
-    const { tag = "div", ...props } = data;
-    const element = document.createElement(tag);
-    set(element, props);
-    return element;
-  } else if (typeof data === "string") {
-    return document.createTextNode(data);
-  } else if (typeof data === "number") {
-    return document.createTextNode(data.toString());
-  } else {
-    return document.createComment(data);
   }
 }
 

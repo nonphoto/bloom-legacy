@@ -94,3 +94,11 @@ export const clientRect = (ref) => {
   });
   return bounds;
 };
+
+export const after = (fn) => {
+  const signal = S.data(S.sample(fn));
+  S(() => {
+    signal(fn());
+  });
+  return signal;
+};
