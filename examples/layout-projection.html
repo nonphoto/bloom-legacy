@@ -74,12 +74,14 @@
       function animateRect(stream, options = {}) {
         const result = S.data(S.sample(stream));
         S((prev) => {
-          animate({
-            ...options,
-            from: 0,
-            to: 1,
-            onUpdate: (p) => void result(mixRect(prev, stream(), p)),
-          });
+          if (prev && stream()) {
+            animate({
+              ...options,
+              from: 0,
+              to: 1,
+              onUpdate: (p) => void result(mixRect(prev, stream(), p)),
+            });
+          }
           return stream();
         }, S.sample(stream));
         return result;
@@ -88,8 +90,10 @@
       const Projected = ({
         rect,
         parent,
+        updateLayout,
         children,
-        borderRadius,
+        layout,
+        borderRadius = 0,
         ...other
       }) => {
         const element = S.data();
@@ -102,20 +106,26 @@
               },
               typeof parent === "function" ? parent() : undefined
             );
-            projection.setLayout(element().getBoundingClientRect());
             S.cleanup(() => {
               projection.destroy();
             });
+            S.on(updateLayout, () => {
+              element().style.transform = "";
+              const nextLayout = element().getBoundingClientRect();
+              projection.setLayout(nextLayout);
+              layout(nextLayout);
+            });
+            S(() => {
+              const target = rect() || layout();
+              if (target) {
+                projection.setTarget(target);
+              }
+              element().style.borderRadius = correctBorderRadius(
+                borderRadius,
+                projection
+              );
+            });
             return projection;
-          }
-        });
-        S(() => {
-          if (projection() && rect) {
-            projection().setTarget(rect());
-            element().style.borderRadius = correctBorderRadius(
-              borderRadius,
-              projection()
-            );
           }
         });
         return {
@@ -128,32 +138,26 @@
 
       S.root(() => {
         const toggle = S.data();
-        const parentRect = animateRect(
-          S(() =>
-            toggle()
-              ? { top: 0, left: 0, bottom: 300, right: 300 }
-              : { top: 200, left: 200, bottom: 300, right: 300 }
-          )
-        );
-
-        const childRect = animateRect(
-          S(() =>
-            toggle()
-              ? { top: 0, left: 0, bottom: 100, right: 100 }
-              : { top: 100, left: 100, bottom: 200, right: 200 }
-          )
-        );
+        const parentLayout = S.data();
+        const childLayout = S.data();
+        const parentRect = animateRect(parentLayout);
+        const childRect = animateRect(childLayout);
 
         const Main = Projected({
           id: "parent",
           rect: parentRect,
+          layout: parentLayout,
+          updateLayout: toggle,
           borderRadius: 16,
+          "data-layout": toggle,
           onClick: () => toggle(!S.sample(toggle)),
           children: (parent) =>
             Projected({
               parent,
               borderRadius: 16,
               rect: childRect,
+              layout: childLayout,
+              updateLayout: toggle,
               id: "child",
             }),
         });
