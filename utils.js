@@ -25,32 +25,34 @@ export function domEvent(eventTarget, type, options) {
   return event;
 }
 
-export const mouseEvent = domEvent(document, "mousemove", {
-  passive: true,
-});
+export const mouseEvent = S.root(() =>
+  domEvent(document, "mousemove", {
+    passive: true,
+  })
+);
 
-export const mousePosition = S(() => {
+export const mousePosition = S.root(() => {
   const { clientX, clientY } = mouseEvent() || { clientX: 0, clientY: 0 };
   return [clientX, clientY];
 });
 
-export const windowResize = throttleByAnimationFrame(
-  domEvent(window, "resize", { passive: true })
+export const windowResize = S.root(() =>
+  throttleByAnimationFrame(domEvent(window, "resize", { passive: true }))
 );
 
-export const windowSize = S.on(windowResize, () => [
-  window.innerWidth,
-  window.innerHeight,
-]);
-
-export const windowScroll = throttleByAnimationFrame(
-  domEvent(window, "scroll", { passive: true, capture: true })
+export const windowSize = S.root(() =>
+  S.on(windowResize, () => [window.innerWidth, window.innerHeight])
 );
 
-export const windowOffset = S.on(windowScroll, () => [
-  window.pageXOffset,
-  window.pageYOffset,
-]);
+export const windowScroll = S.root(() =>
+  throttleByAnimationFrame(
+    domEvent(window, "scroll", { passive: true, capture: true })
+  )
+);
+
+export const windowOffset = S.root(() =>
+  S.on(windowScroll, () => [window.pageXOffset, window.pageYOffset])
+);
 
 export function memo(fn, ...comparator) {
   const value = S.value(S.sample(fn), ...comparator);
