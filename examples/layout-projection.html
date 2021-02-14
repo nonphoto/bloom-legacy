@@ -37,7 +37,7 @@
   <body>
     <script type="module">
       import { patch } from "../index.js";
-      import { after } from "../utils.js";
+      import { layoutRect, reflow } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
       import { animate, mix } from "https://cdn.skypack.dev/popmotion";
       import {
@@ -59,7 +59,7 @@
         return (pixels / (axis.max - axis.min)) * 100;
       }
 
-      function correctBorderRadius(latest, node) {
+      function correctBorderRadius(latest = 0, node) {
         if (typeof latest === "string") {
           if (latest.endsWith("px")) {
             latest = parseFloat(latest);
@@ -88,12 +88,11 @@
       }
 
       const Projected = ({
-        rect,
+        target,
         parent,
-        updateLayout,
         children,
-        layout,
         borderRadius = 0,
+        ref,
         ...other
       }) => {
         const element = S.data();
@@ -109,28 +108,33 @@
             S.cleanup(() => {
               projection.destroy();
             });
-            S.on(updateLayout, () => {
-              element().style.transform = "";
-              const nextLayout = element().getBoundingClientRect();
-              projection.setLayout(nextLayout);
-              layout(nextLayout);
+            const layout = layoutRect(element);
+            S(() => {
+              if (layout()) {
+                projection.setLayout(layout());
+              }
             });
             S(() => {
-              const target = rect() || layout();
-              if (target) {
-                projection.setTarget(target);
+              const rect = target() || layout();
+              if (rect) {
+                projection.setTarget(rect);
+                element().style.borderRadius = correctBorderRadius(
+                  borderRadius,
+                  projection
+                );
               }
-              element().style.borderRadius = correctBorderRadius(
-                borderRadius,
-                projection
-              );
             });
             return projection;
           }
         });
         return {
           ...other,
-          ref: element,
+          ref: (value) => {
+            if (ref) {
+              ref(value);
+            }
+            element(value);
+          },
           children:
             typeof children === "function" ? children(projection) : children,
         };
@@ -138,27 +142,28 @@
 
       S.root(() => {
         const toggle = S.data();
-        const parentLayout = S.data();
-        const childLayout = S.data();
-        const parentRect = animateRect(parentLayout);
-        const childRect = animateRect(childLayout);
+        S.on(toggle, () => {
+          reflow(true);
+        });
+        const parentElement = S.data();
+        const childElement = S.data();
+        const parentRect = animateRect(layoutRect(parentElement));
+        const childRect = animateRect(layoutRect(childElement));
 
         const Main = Projected({
           id: "parent",
-          rect: parentRect,
-          layout: parentLayout,
-          updateLayout: toggle,
+          ref: parentElement,
+          target: parentRect,
           borderRadius: 16,
           "data-layout": toggle,
           onClick: () => toggle(!S.sample(toggle)),
           children: (parent) =>
             Projected({
               parent,
-              borderRadius: 16,
-              rect: childRect,
-              layout: childLayout,
-              updateLayout: toggle,
               id: "child",
+              ref: childElement,
+              target: childRect,
+              borderRadius: 16,
             }),
         });
 

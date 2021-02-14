@@ -68,6 +68,20 @@ export function throttleByAnimationFrame(fn) {
   return value;
 }
 
+export const reflow = S.data();
+
+export const layoutRect = (element) => {
+  return S.on([reflow, element], () => {
+    if (element()) {
+      const transform = element().style.transform;
+      element().style.transform = "";
+      const rect = element().getBoundingClientRect();
+      element().style.transform = transform;
+      return rect;
+    }
+  });
+};
+
 export const clientRect = (ref) => {
   const bounds = S.data({
     left: 0,
