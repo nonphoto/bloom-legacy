@@ -1,5 +1,10 @@
 import S from "https://cdn.skypack.dev/s-js";
 import sync, { cancelSync } from "https://cdn.skypack.dev/framesync";
+import { animate, mix } from "https://cdn.skypack.dev/popmotion";
+import {
+  layoutNode,
+  updateProjectionStyle,
+} from "https://cdn.skypack.dev/projection@2.0.0-alpha.3";
 
 export function animationEvent(type) {
   const event = S.data({ delta: 0, timestamp: 0 });
@@ -118,3 +123,96 @@ export const after = (fn) => {
   });
   return signal;
 };
+
+export function Projected({
+  target,
+  parent,
+  children,
+  borderRadius = 0,
+  ref,
+  ...other
+}) {
+  const element = S.data();
+  const projection = S(() => {
+    if (element()) {
+      const projection = layoutNode(
+        {
+          onProjectionUpdate: () =>
+            updateProjectionStyle(element(), projection),
+        },
+        typeof parent === "function" ? parent() : undefined
+      );
+      S.cleanup(() => {
+        projection.destroy();
+      });
+      const layout = layoutRect(element);
+      S(() => {
+        if (layout()) {
+          projection.setLayout(layout());
+        }
+      });
+      S(() => {
+        const rect = target() || layout();
+        if (rect) {
+          projection.setTarget(rect);
+          element().style.borderRadius = correctBorderRadius(
+            borderRadius,
+            projection
+          );
+        }
+      });
+      return projection;
+    }
+  });
+  return {
+    ...other,
+    ref: (value) => {
+      if (ref) {
+        ref(value);
+      }
+      element(value);
+    },
+    children: typeof children === "function" ? children(projection) : children,
+  };
+}
+
+export function mixRect(prev, next, p) {
+  return {
+    top: mix(prev.top, next.top, p),
+    left: mix(prev.left, next.left, p),
+    right: mix(prev.right, next.right, p),
+    bottom: mix(prev.bottom, next.bottom, p),
+  };
+}
+
+export function pixelsToPercent(pixels, axis) {
+  return (pixels / (axis.max - axis.min)) * 100;
+}
+
+export function correctBorderRadius(latest = 0, node) {
+  if (typeof latest === "string") {
+    if (latest.endsWith("px")) {
+      latest = parseFloat(latest);
+    } else {
+      return latest;
+    }
+  }
+  const { x, y } = node.getTarget();
+  return `${pixelsToPercent(latest, x)}% ${pixelsToPercent(latest, y)}%`;
+}
+
+export function animateRect(stream, options = {}) {
+  const result = S.data(S.sample(stream));
+  S((prev) => {
+    if (prev && stream()) {
+      animate({
+        ...options,
+        from: 0,
+        to: 1,
+        onUpdate: (p) => void result(mixRect(prev, stream(), p)),
+      });
+    }
+    return stream();
+  }, S.sample(stream));
+  return result;
+}
