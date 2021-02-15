@@ -85,14 +85,16 @@ export const layoutRect = (element) => {
   const rect = S.data();
   S(() => {
     if (element()) {
-      element().style.transform = "";
-      sync.read(
-        () => {
-          rect(element().getBoundingClientRect());
-        },
-        false,
-        true
-      );
+      sync.read(() => {
+        element().style.transform = "";
+        sync.read(
+          () => {
+            rect(element().getBoundingClientRect());
+          },
+          false,
+          true
+        );
+      });
     }
   });
   return rect;
@@ -157,18 +159,14 @@ export function Projected({
       S(() => {
         const rect = target() || layout();
         if (rect) {
-          sync.render(
-            () => {
-              projection.setTarget(rect);
-              element().style.borderRadius = `${pixelsToPercent(
-                borderRadius,
-                rect.left,
-                rect.right
-              )}% / ${pixelsToPercent(borderRadius, rect.top, rect.bottom)}%`;
-            },
-            false,
-            true
-          );
+          sync.update(() => {
+            projection.setTarget(rect);
+            element().style.borderRadius = `${pixelsToPercent(
+              borderRadius,
+              rect.left,
+              rect.right
+            )}% / ${pixelsToPercent(borderRadius, rect.top, rect.bottom)}%`;
+          });
         }
       });
       return projection;

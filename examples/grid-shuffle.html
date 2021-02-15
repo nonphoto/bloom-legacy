@@ -45,6 +45,7 @@
       import { layoutRect, Animated } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
       import SArray from "https://cdn.skypack.dev/s-array";
+      import sync, { cancelSync } from "https://cdn.skypack.dev/framesync";
 
       const range = (n) => [...Array(n).keys()];
       const shuffle = (a) => a.sort(() => Math.random() - 0.5);
@@ -61,7 +62,8 @@
         );
 
         const animation = {
-          duration: 1000,
+          type: "spring",
+          bounce: 0,
         };
 
         const Main = {
