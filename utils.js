@@ -73,6 +73,14 @@ export function throttleByAnimationFrame(fn) {
   return value;
 }
 
+export const after = (fn) => {
+  const signal = S.data(S.sample(fn));
+  S(() => {
+    signal(fn());
+  });
+  return signal;
+};
+
 export const reflow = S.data();
 
 export const layoutRect = (element) => {
@@ -116,14 +124,6 @@ export const clientRect = (ref) => {
   return bounds;
 };
 
-export const after = (fn) => {
-  const signal = S.data(S.sample(fn));
-  S(() => {
-    signal(fn());
-  });
-  return signal;
-};
-
 export function Projected({
   target,
   parent,
@@ -155,10 +155,11 @@ export function Projected({
         const rect = target() || layout();
         if (rect) {
           projection.setTarget(rect);
-          element().style.borderRadius = correctBorderRadius(
+          element().style.borderRadius = `${pixelsToPercent(
             borderRadius,
-            projection
-          );
+            rect.left,
+            rect.right
+          )}% / ${pixelsToPercent(borderRadius, rect.top, rect.bottom)}%`;
         }
       });
       return projection;
@@ -176,6 +177,12 @@ export function Projected({
   };
 }
 
+export function Animated({ animation, ...props }) {
+  const ref = S.data();
+  const target = animateRect(layoutRect(ref), animation);
+  return Projected({ ref, target, ...props });
+}
+
 export function mixRect(prev, next, p) {
   return {
     top: mix(prev.top, next.top, p),
@@ -185,20 +192,8 @@ export function mixRect(prev, next, p) {
   };
 }
 
-export function pixelsToPercent(pixels, axis) {
-  return (pixels / (axis.max - axis.min)) * 100;
-}
-
-export function correctBorderRadius(latest = 0, node) {
-  if (typeof latest === "string") {
-    if (latest.endsWith("px")) {
-      latest = parseFloat(latest);
-    } else {
-      return latest;
-    }
-  }
-  const { x, y } = node.getTarget();
-  return `${pixelsToPercent(latest, x)}% ${pixelsToPercent(latest, y)}%`;
+export function pixelsToPercent(pixels, min, max) {
+  return (pixels / (max - min)) * 100;
 }
 
 export function animateRect(stream, options = {}) {

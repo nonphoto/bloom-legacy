@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 1.5rem;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        padding: 1rem;
+        grid-gap: 1rem;
+        grid-template-columns: 4fr 3fr 2fr 1fr;
+        grid-template-rows: 4fr 3fr 2fr 1fr;
+        min-height: 100vh;
+        user-select: none;
+        overflow: hidden;
+      }
+
+      .box {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #dde;
+      }
+    </style>
+    <script type="module">
+      import { patch } from "../index.js";
+      import { layoutRect, Animated, reflow } from "../utils.js";
+      import S from "https://cdn.skypack.dev/s-js";
+      import SArray from "https://cdn.skypack.dev/s-array";
+
+      const range = (n) => [...Array(n).keys()];
+      const shuffle = (a) => a.sort(() => Math.random() - 0.5);
+
+      const count = 16;
+
+      S.root(() => {
+        const items = SArray(
+          range(16).map((index) => {
+            return {
+              index,
+            };
+          })
+        );
+
+        S.on(items, () => {
+          reflow(true);
+        });
+
+        const animation = {
+          duration: 1000,
+        };
+
+        const Main = {
+          tag: "ul",
+          onClick: () => items(shuffle(items())),
+          children: items.map(({ index }) =>
+            Animated({
+              tag: "li",
+              classList: "box",
+              borderRadius: 16,
+              animation,
+              style: {
+                backgroundColor: `hsl(${
+                  index * (360 / S.sample(items).length)
+                }deg, 50%, 80%)`,
+              },
+              children: (parent) =>
+                Animated({
+                  parent,
+                  children: index,
+                  animation,
+                }),
+            })
+          ),
+        };
+
+        patch(document.body, Main);
+      });
+    </script>
+  </head>
+  <body></body>
+</html>
