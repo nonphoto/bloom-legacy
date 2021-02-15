@@ -42,7 +42,7 @@
     </style>
     <script type="module">
       import { patch } from "../index.js";
-      import { layoutRect, Animated, reflow } from "../utils.js";
+      import { layoutRect, Animated } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
       import SArray from "https://cdn.skypack.dev/s-array";
 
@@ -59,10 +59,6 @@
             };
           })
         );
-
-        S.on(items, () => {
-          reflow(true);
-        });
 
         const animation = {
           duration: 1000,

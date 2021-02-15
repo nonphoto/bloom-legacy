@@ -37,35 +37,34 @@
   <body>
     <script type="module">
       import { patch } from "../index.js";
-      import { layoutRect, animateRect, Projected, reflow } from "../utils.js";
+      import { layoutRect, animateRect, Projected } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
 
       S.root(() => {
         const toggle = S.data();
-        S.on(toggle, () => {
-          reflow(true);
-        });
         const parentElement = S.data();
         const childElement = S.data();
         const parentRect = animateRect(layoutRect(parentElement));
         const childRect = animateRect(layoutRect(childElement));
 
-        const Main = Projected({
-          id: "parent",
-          ref: parentElement,
-          target: parentRect,
-          borderRadius: 16,
-          "data-layout": toggle,
-          onClick: () => toggle(!S.sample(toggle)),
-          children: (parent) =>
-            Projected({
-              parent,
-              id: "child",
-              ref: childElement,
-              target: childRect,
-              borderRadius: 16,
-            }),
-        });
+        const Main = S.on(toggle, () =>
+          Projected({
+            id: "parent",
+            ref: parentElement,
+            target: parentRect,
+            borderRadius: 16,
+            "data-layout": toggle,
+            onClick: () => toggle(!S.sample(toggle)),
+            children: (parent) =>
+              Projected({
+                parent,
+                id: "child",
+                ref: childElement,
+                target: childRect,
+                borderRadius: 16,
+              }),
+          })
+        );
 
         patch(document.body, Main);
       });

@@ -81,10 +81,8 @@ export const after = (fn) => {
   return signal;
 };
 
-export const reflow = S.data();
-
 export const layoutRect = (element) => {
-  return S.on([reflow, element], () => {
+  return S(() => {
     if (element()) {
       const transform = element().style.transform;
       element().style.transform = "";
@@ -200,6 +198,7 @@ export function animateRect(stream, options = {}) {
   const result = S.data(S.sample(stream));
   S((prev) => {
     if (prev && stream()) {
+      console.log("animate");
       animate({
         ...options,
         from: 0,
