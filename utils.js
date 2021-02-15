@@ -82,15 +82,20 @@ export const after = (fn) => {
 };
 
 export const layoutRect = (element) => {
-  return S(() => {
+  const rect = S.data();
+  S(() => {
     if (element()) {
-      const transform = element().style.transform;
       element().style.transform = "";
-      const rect = element().getBoundingClientRect();
-      element().style.transform = transform;
-      return rect;
+      sync.read(
+        () => {
+          rect(element().getBoundingClientRect());
+        },
+        false,
+        true
+      );
     }
   });
+  return rect;
 };
 
 export const clientRect = (ref) => {
@@ -152,12 +157,18 @@ export function Projected({
       S(() => {
         const rect = target() || layout();
         if (rect) {
-          projection.setTarget(rect);
-          element().style.borderRadius = `${pixelsToPercent(
-            borderRadius,
-            rect.left,
-            rect.right
-          )}% / ${pixelsToPercent(borderRadius, rect.top, rect.bottom)}%`;
+          sync.render(
+            () => {
+              projection.setTarget(rect);
+              element().style.borderRadius = `${pixelsToPercent(
+                borderRadius,
+                rect.left,
+                rect.right
+              )}% / ${pixelsToPercent(borderRadius, rect.top, rect.bottom)}%`;
+            },
+            false,
+            true
+          );
         }
       });
       return projection;
@@ -198,7 +209,6 @@ export function animateRect(stream, options = {}) {
   const result = S.data(S.sample(stream));
   S((prev) => {
     if (prev && stream()) {
-      console.log("animate");
       animate({
         ...options,
         from: 0,
