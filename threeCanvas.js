@@ -1,5 +1,5 @@
 import * as three from "https://cdn.skypack.dev/three";
-import { time } from "./utils.js";
+import { animationRender } from "./utils.js";
 import S from "https://cdn.skypack.dev/s-js";
 import set from "https://cdn.skypack.dev/set-value";
 
@@ -35,7 +35,7 @@ export function threeCanvas(options, data) {
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   };
   window.addEventListener("mousemove", onMousemove, false);
-  S.on(time, () => {
+  S.on(animationRender, () => {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(scene.children);
     if (intersects.length > 0) {

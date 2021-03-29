@@ -18,7 +18,6 @@ function draw(context, data) {
     context.save();
     context.beginPath();
     for (let [key, value] of Object.entries(props)) {
-      console.log(key, value);
       context[key] = resolve(value);
     }
     if (resolve(translate)) {
@@ -44,8 +43,9 @@ export function canvas(data) {
   const context = canvas.getContext("2d");
   const observer = new ResizeObserver((entries) => {
     for (let entry of entries) {
-      entry.target.width = entry.contentBoxSize.inlineSize;
-      entry.target.height = entry.contentBoxSize.blockSize;
+      console.log(entry.contentBoxSize.inlineSize);
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
       context.clearRect(0, 0, entry.target.width, entry.target.height);
       draw(context, data);
     }

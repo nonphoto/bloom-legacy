@@ -20,6 +20,7 @@ export const animationUpdate = S.root(() => animationEvent("update"));
 export const animationPreRender = S.root(() => animationEvent("preRender"));
 export const animationRender = S.root(() => animationEvent("render"));
 export const animationPostRender = S.root(() => animationEvent("postRender"));
+export const time = S.on(animationUpdate, () => performance.now());
 
 export function domEvent(eventTarget, type, options) {
   const event = S.data();
