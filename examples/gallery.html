@@ -6,45 +6,78 @@
       body {
         margin: 0;
         padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       }
-      main {
+      hover-gallery {
         position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
+        overflow: hidden;
       }
-      .link {
+      hover-gallery > a {
         position: relative;
-        font-family: -apple-system, sans-serif;
         font-size: 6rem;
         letter-spacing: -0.06ch;
         margin: 0;
-        cursor: "pointer";
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
       }
-      .image-container {
-        overflow: hidden;
-        pointer-events: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 50vmin;
-        height: 50vmin;
-      }
-      .image {
+      hover-gallery > img {
         position: absolute;
         width: 100%;
         height: 100%;
         top: 0;
         left: 0;
+        opacity: 0;
       }
     </style>
   </head>
   <body>
+    <hover-gallery>
+      <a slot="trigger" href="/" data-key="alpha">Alpha</a>
+      <a slot="trigger" href="/" data-key="bravo">Bravo</a>
+      <a slot="trigger" href="/" data-key="charlie">Charlie</a>
+      <a slot="trigger" href="/" data-key="delta">Delta</a>
+      <a slot="trigger" href="/" data-key="echo">Echo</a>
+      <img
+        slot="item"
+        data-key="alpha"
+        data-aspect-ratio="0.634"
+        src="https://images.unsplash.com/photo-1509957660513-3cfee07defec?w=1000&q=80"
+      />
+      <img
+        slot="item"
+        data-key="bravo"
+        data-aspect-ratio="1.145"
+        src="https://images.unsplash.com/photo-1497377701144-65a4a020f4c9?w=1000&q=80"
+      />
+      <img
+        slot="item"
+        data-key="charlie"
+        data-aspect-ratio="0.748"
+        src="https://images.unsplash.com/photo-1531523499679-7416e782dd96?w=1000&q=80"
+      />
+      <img
+        slot="item"
+        data-key="delta"
+        data-aspect-ratio="1.780"
+        src="https://images.unsplash.com/photo-1535629097462-c777c5b466a1?w=1000&q=80"
+      />
+      <img
+        slot="item"
+        data-key="echo"
+        data-aspect-ratio="0.5625"
+        src="https://images.unsplash.com/photo-1506170206-a6920d212828?w=1000&q=80"
+      />
+    </hover-gallery>
     <script type="module">
-      import { patch, create } from "../index.js";
-      import { mouse, time } from "../utils.js";
+      import defineElement from "../defineElement.js";
+      import { assign } from "../index.js";
+      import { mousePosition, domEvent, time } from "../utils.js";
       import S from "https://cdn.skypack.dev/s-js";
 
       const fitRect = (rect, target) => {
@@ -60,141 +93,107 @@
         ];
       };
 
-      const items = [
-        {
-          image: {
-            src:
-              "https://images.unsplash.com/photo-1509957660513-3cfee07defec?w=1000&q=80",
-            aspectRatio: 406 / 640,
-          },
-          title: "Alpha",
-        },
-        {
-          image: {
-            src:
-              "https://images.unsplash.com/photo-1497377701144-65a4a020f4c9?w=1000&q=80",
-            aspectRatio: 733 / 640,
-          },
-          title: "Bravo",
-        },
-
-        {
-          image: {
-            src:
-              "https://images.unsplash.com/photo-1531523499679-7416e782dd96?w=1000&q=80",
-            aspectRatio: 479 / 640,
-          },
-          title: "Charlie",
-        },
-        {
-          image: {
-            src:
-              "https://images.unsplash.com/photo-1535629097462-c777c5b466a1?w=1000&q=80",
-            aspectRatio: 1139 / 640,
-          },
-          title: "Delta",
-        },
-        {
-          image: {
-            src:
-              "https://images.unsplash.com/photo-1506170206-a6920d212828?w=1000&q=80",
-            aspectRatio: 360 / 640,
-          },
-          title: "Echo",
-        },
-      ];
-
-      const Crossfade = ({ activeKey, children, ...other }) => {
-        const container = create(other);
-        const childMap = new Map(
-          children.map(({ key, ...child }) => [key, create(child)])
-        );
-        S.on(activeKey, () => {
-          if (activeKey()) {
-            const child = childMap.get(activeKey()).cloneNode();
-            container.appendChild(child);
-            const animation = child.animate([{ opacity: 0 }, { opacity: 1 }], {
-              duration: 200,
-            });
-            animation.onfinish = () => {
-              let c = container.firstChild;
-              while (c instanceof Node && c !== child) {
-                container.removeChild(c);
-                c = container.firstChild;
-              }
-            };
-          }
-        });
-        return container;
-      };
-
-      const Transform = ({ translate, scale, style, children, ...other }) => {
+      const css = (template, ...args) => {
+        let str = "";
+        for (let i = 0; i < args.length; i++) {
+          str += template[i] + String(args[i]);
+        }
         return {
-          ...other,
-          style: {
-            ...style,
-            transform: S(() =>
-              "".concat(
-                `translate(${translate()[0]}px, ${translate()[1]}px)`,
-                `translate(-50%, -50%)`,
-                `scale(${scale()[0]}, ${scale()[1]})`
-              )
-            ),
-          },
-          children,
+          tagName: "style",
+          children: str + template[template.length - 1],
         };
       };
 
-      S.root(() => {
-        const images = items.map((item) => {
-          const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
-          return { rect, ...item.image, isActive: S.data(false) };
+      defineElement("hover-gallery", function () {
+        const triggers = S.data([]);
+        const items = S.data([]);
+        const isActiveMap = S(() => {
+          return triggers().map((node) => {
+            const isActive = S.value(false);
+            const enter = domEvent(node, "mouseenter");
+            const leave = domEvent(node, "mouseleave");
+            S.on(enter, () => isActive(true), undefined, true);
+            S.on(leave, () => isActive(false), undefined, true);
+            return { node, isActive };
+          });
         });
-        const activeImage = S(() => images.find((image) => image.isActive()));
+        const rects = S(() =>
+          Object.fromEntries(
+            items().map((item) => [
+              item.dataset.key,
+              fitRect([0, 0, 1, item.dataset.aspectRatio], [0, 0, 1, 1]),
+            ])
+          )
+        );
+        const activeKey = S(() => {
+          const trigger = isActiveMap().find(({ isActive }) => isActive());
+          return trigger ? trigger.node.dataset.key : undefined;
+        });
+        const activeRect = S(() =>
+          activeKey() ? rects()[activeKey()] : undefined
+        );
         const containerScale = S.on(
           time,
           ([w, h]) => {
             const c = 0.2;
-            const [, , wt, ht] = activeImage()
-              ? activeImage().rect
-              : [0, 0, 1.5, 0];
+            const [, , wt, ht] = activeRect() || [0, 0, 1.5, 0];
             return [w + (wt - w) * c, h + (ht - h) * c];
           },
           [1.5, 0]
         );
-
-        const Main = {
-          tag: "main",
-          children: [
-            Transform({
-              classList: "image-container",
-              translate: mouse,
-              scale: containerScale,
-              children: Crossfade({
-                activeKey: S(() =>
-                  activeImage() ? activeImage().src : undefined
-                ),
-                children: images.map(({ src, isActive }) => ({
-                  tag: "img",
-                  key: src,
-                  src,
-                  classList: "image",
-                })),
-              }),
-            }),
-            items.map(({ title }, i) => ({
-              tag: "a",
-              onmouseenter: () => {
-                images[i].isActive(true);
-              },
-              onmouseleave: () => images[i].isActive(false),
-              classList: "link",
-              children: title,
-            })),
-          ],
-        };
-
-        patch(document.body, Main);
+        S(() => {
+          items().map((item, index) => {
+            const opacity = S.on(
+              time,
+              (opacity) =>
+                opacity +
+                ((item.dataset.key === activeKey() ? 1 : 0) - opacity) * 0.2,
+              0
+            );
+            assign(item, { style: { opacity } });
+          });
+        });
+        return [
+          css`
+            ::slotted([slot="item"]) {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+            }
+            div {
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 50vmin;
+              height: 50vmin;
+              pointer-events: none;
+              z-index: -1;
+            }
+          `,
+          {
+            tagName: "slot",
+            assignedElements: triggers,
+            name: "trigger",
+          },
+          {
+            style: {
+              transform: S(() =>
+                "".concat(
+                  `translate(${mousePosition()[0]}px, ${mousePosition()[1]}px)`,
+                  `translate(-50%, -50%)`,
+                  `scale(${containerScale()[0]}, ${containerScale()[1]})`
+                )
+              ),
+            },
+            children: {
+              tagName: "slot",
+              assignedElements: items,
+              name: "item",
+            },
+          },
+        ];
       });
     </script>
   </body>

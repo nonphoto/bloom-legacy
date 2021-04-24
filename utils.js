@@ -37,7 +37,7 @@ export const mouseEvent = S.root(() =>
   })
 );
 
-export const mousePosition = S.root(() => {
+export const mousePosition = S(() => {
   const { clientX, clientY } = mouseEvent() || { clientX: 0, clientY: 0 };
   return [clientX, clientY];
 });

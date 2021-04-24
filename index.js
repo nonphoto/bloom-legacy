@@ -78,10 +78,10 @@ export function setStyle(node, key, value) {
   }
 }
 
-export function set(node, props) {
+export function assign(node, props) {
   for (const key in props) {
     const value = props[key];
-    if (["tag"].includes(key)) {
+    if (["tagName"].includes(key)) {
       continue;
     }
     if (key === "children") {
@@ -98,6 +98,13 @@ export function set(node, props) {
       setClassList(node, value);
     } else if (key === "ref") {
       value(node);
+    } else if (key === "assignedElements" && key in node) {
+      const callback = () => value(node.assignedElements());
+      node.addEventListener("slotchange", callback);
+      S.cleanup(() => {
+        node.removeEventListener("slotchange", callback);
+      });
+      callback();
     } else if (key.startsWith("on")) {
       const eventKey = key.slice(2).toLowerCase();
       node.addEventListener(eventKey, value);
@@ -211,17 +218,17 @@ export function patch(parent, value, current) {
     }
     return value;
   } else if (valueType === "object") {
-    const { tag = "div", ...props } = value;
+    const { tagName = "div", ...props } = value;
     if (
       current instanceof Element &&
-      tag.toLowerCase() === current.tagName.toLowerCase()
+      tagName.toLowerCase() === current.tagName.toLowerCase()
     ) {
-      set(current, props);
+      assign(current, props);
       return current;
     } else {
-      const element = document.createElement(tag);
+      const element = document.createElement(tagName);
       const result = patch(parent, element, current);
-      set(element, props);
+      assign(element, props);
       return result;
     }
   } else {
@@ -237,7 +244,7 @@ export function serialize(data) {
   } else if (Array.isArray(data)) {
     return data.map(serialize).join("");
   } else if (typeof data === "object") {
-    const { tag = "div", children, ...rest } = data;
+    const { tagName = "div", children, ...rest } = data;
     const attributes = Object.entries(rest)
       .filter(([, value]) => typeof value !== "function")
       .map(([key, value]) => {
@@ -249,11 +256,11 @@ export function serialize(data) {
         }
         return `${paramCase(key)}='${value}'`;
       });
-    const tagString = [tag, ...attributes].join(" ");
-    if (htmlVoidElements.includes(tag)) {
+    const tagString = [tagName, ...attributes].join(" ");
+    if (htmlVoidElements.includes(tagName)) {
       return `<${tagString}/>`;
     } else {
-      return `<${tagString}>${serialize(children)}</${tag}>`;
+      return `<${tagString}>${serialize(children)}</${tagName}>`;
     }
   } else if (data == null) {
     return "";
