@@ -2,9 +2,9 @@
   "name": "@nonphoto/bloom",
   "version": "1.0.1",
   "description": "A small toolkit for manipulating the DOM, with a focus on creative coding and animation.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "index.js",
   "exports": {
-    "import": "./index.js",
     "default": "./index.js"
   },
   "keywords": [
@@ -19,7 +19,8 @@
   ],
   "type": "module",
   "scripts": {
-    "test": "exit 0"
+    "test": "exit 0",
+    "build": "npx esbuild index.js --bundle --minify --target=es6 --outfile=dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -30,5 +31,12 @@
   "bugs": {
     "url": "https://github.com/nonphoto/bloom/issues"
   },
-  "homepage": "https://github.com/nonphoto/bloom#readme"
+  "homepage": "https://github.com/nonphoto/bloom#readme",
+  "dependencies": {
+    "param-case": "^3.0.4",
+    "s-js": "^0.4.9"
+  },
+  "devDependencies": {
+    "esbuild": "^0.11.20"
+  }
 }

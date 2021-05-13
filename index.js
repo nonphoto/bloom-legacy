@@ -1,5 +1,5 @@
-import S from "https://cdn.skypack.dev/s-js";
-import { paramCase } from "https://cdn.skypack.dev/param-case";
+import S from "s-js";
+import { paramCase } from "param-case";
 
 const htmlVoidElements = [
   "area",
