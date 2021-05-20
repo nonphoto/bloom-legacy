@@ -1,5 +1,4 @@
 import S from "s-js";
-import { paramCase } from "param-case";
 
 const htmlVoidElements = [
   "area",
@@ -251,10 +250,10 @@ export function serialize(data) {
         if (key === "style") {
           value = Object.entries(value)
             .filter(([, value2]) => typeof value2 !== "function")
-            .map(([key2, value2]) => `${paramCase(key2)}:${value2.toString()};`)
+            .map(([key2, value2]) => `${key2}:${value2.toString()};`)
             .join("");
         }
-        return `${paramCase(key)}='${value}'`;
+        return `${key}='${value}'`;
       });
     const tagString = [tagName, ...attributes].join(" ");
     if (htmlVoidElements.includes(tagName)) {
