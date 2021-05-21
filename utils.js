@@ -1,4 +1,4 @@
-import S from "https://cdn.skypack.dev/s-js";
+import S from "s-js";
 import sync, { cancelSync } from "https://cdn.skypack.dev/framesync";
 import { animate, mix } from "https://cdn.skypack.dev/popmotion";
 import {

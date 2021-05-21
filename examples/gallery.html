@@ -2,6 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script type="importmap">
+      {
+        "imports": {
+          "s-js": "https://ga.jspm.io/npm:s-js@0.4.9/dist/S.js"
+        }
+      }
+    </script>
     <style>
       body {
         margin: 0;
@@ -78,7 +85,7 @@
       import defineElement from "../defineElement.js";
       import { assign } from "../index.js";
       import { mousePosition, domEvent, time } from "../utils.js";
-      import S from "https://cdn.skypack.dev/s-js";
+      import S from "s-js";
 
       const fitRect = (rect, target) => {
         var sw = target[2] / rect[2];
