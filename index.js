@@ -267,7 +267,7 @@ export function serialize(data) {
             .filter(([, value2]) => typeof value2 !== "function")
             .map(([key2, value2]) => `${key2}:${value2.toString()};`)
             .join("");
-        } else if (key === "classList" && Array.isArray()) {
+        } else if (key === "classList" && Array.isArray(value)) {
           value = value
             .flat(Infinity)
             .filter((item) => typeof item === "string")
