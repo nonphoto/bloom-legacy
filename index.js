@@ -63,7 +63,10 @@ export function setClassList(node, value) {
   if (typeof value === "function") {
     S(() => setClassList(node, value()));
   } else if (Array.isArray(value)) {
-    node.className = value.join(" ");
+    node.className = value
+      .flat(Infinity)
+      .filter((item) => typeof item === "string")
+      .join(" ");
   } else {
     node.className = value;
   }
@@ -71,9 +74,21 @@ export function setClassList(node, value) {
 
 export function setStyle(node, key, value) {
   if (typeof value === "function") {
-    S(() => setStyle(node, key, value()));
+    S(() => {
+      setStyle(node, key, value());
+    });
+  } else if (key[0] === "-" && key[1] === "-") {
+    if (value) {
+      node.style.setProperty(key, value);
+    } else {
+      node.style.removeProperty(key);
+    }
   } else {
-    node.style[key] = value;
+    if (value) {
+      node.style[key] = value;
+    } else {
+      node.style[key] = "";
+    }
   }
 }
 
