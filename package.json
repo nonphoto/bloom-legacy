@@ -1,6 +1,6 @@
 {
   "name": "@nonphoto/bloom",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A small toolkit for manipulating the DOM, with a focus on creative coding and animation.",
   "main": "index.js",
   "module": "index.js",
