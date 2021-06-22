@@ -268,12 +268,13 @@ export function serialize(data) {
             .map(([key2, value2]) => `${key2}:${value2.toString()};`)
             .join("");
         } else if (key === "classList" && Array.isArray(value)) {
+          key = "class";
           value = value
             .flat(Infinity)
             .filter((item) => typeof item === "string")
             .join(" ");
         }
-        return `${key}='${value}'`;
+        return `${key}="${value}"`;
       });
     const tagString = [tagName, ...attributes].join(" ");
     if (htmlVoidElements.includes(tagName)) {
