@@ -267,12 +267,14 @@ export function serialize(data) {
             .filter(([, value2]) => typeof value2 !== "function")
             .map(([key2, value2]) => `${key2}:${value2.toString()};`)
             .join("");
-        } else if (key === "classList" && Array.isArray(value)) {
+        } else if (key === "classList") {
           key = "class";
-          value = value
-            .flat(Infinity)
-            .filter((item) => typeof item === "string")
-            .join(" ");
+          if (Array.isArray(value)) {
+            value = value
+              .flat(Infinity)
+              .filter((item) => typeof item === "string")
+              .join(" ");
+          }
         }
         return `${key}="${value}"`;
       });
