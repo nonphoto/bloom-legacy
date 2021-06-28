@@ -1,4 +1,5 @@
 import S from "s-js";
+import kebabCase from "lodash.kebabcase";
 
 const htmlVoidElements = [
   "area",
@@ -265,8 +266,13 @@ export function serialize(data) {
         if (key === "style") {
           value = Object.entries(value)
             .filter(([, value2]) => typeof value2 !== "function")
-            .map(([key2, value2]) => `${key2}:${value2.toString()};`)
-            .join("");
+            .map(
+              ([key2, value2]) =>
+                `${key2.startsWith("--") ? "--" : ""}${kebabCase(
+                  key2
+                )}: ${value2.toString()};`
+            )
+            .join(" ");
         } else if (key === "classList") {
           key = "class";
           if (Array.isArray(value)) {
@@ -276,7 +282,7 @@ export function serialize(data) {
               .join(" ");
           }
         }
-        return `${key}="${value}"`;
+        return `${kebabCase(key)}="${value}"`;
       });
     const tagString = [tagName, ...attributes].join(" ");
     if (htmlVoidElements.includes(tagName)) {

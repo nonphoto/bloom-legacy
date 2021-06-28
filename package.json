@@ -33,5 +33,8 @@
   "homepage": "https://github.com/nonphoto/bloom#readme",
   "peerDependencies": {
     "s-js": "^0.4.9"
+  },
+  "dependencies": {
+    "lodash.kebabcase": "^4.1.1"
   }
 }
