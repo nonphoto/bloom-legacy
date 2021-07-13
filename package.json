@@ -2,10 +2,16 @@
   "name": "@nonphoto/bloom",
   "version": "1.0.9",
   "description": "A small toolkit for manipulating the DOM, with a focus on creative coding and animation.",
-  "main": "index.js",
-  "module": "index.js",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/bloom.umd.js",
+  "module": "./dist/bloom.es.js",
   "exports": {
-    "default": "./index.js"
+    ".": {
+      "import": "./dist/bloom.es.js",
+      "require": "./dist/bloom.umd.js"
+    }
   },
   "keywords": [
     "animation",
@@ -19,7 +25,8 @@
   ],
   "type": "module",
   "scripts": {
-    "test": "exit 0"
+    "test": "exit 0",
+    "build": "npx vite build"
   },
   "repository": {
     "type": "git",
@@ -36,5 +43,8 @@
   },
   "dependencies": {
     "lodash.kebabcase": "^4.1.1"
+  },
+  "devDependencies": {
+    "vite": "^2.4.2"
   }
 }
