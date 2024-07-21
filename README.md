@@ -1,4 +1,6 @@
-# Bloom
+# Bloom (legacy)
+
+This project is being replaced! Stay tuned.
 
 Bloom is a small toolkit for manipulating the DOM, with a focus on creative coding and animation. It allows you to declaratively create DOM elements with reactive behavior using streams.
 
